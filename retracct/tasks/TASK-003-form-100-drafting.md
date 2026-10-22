@@ -61,7 +61,7 @@ It lets the agent easily fill in all the key terms of the deal without making co
 
 ## 3. Real Estate & Legal Rules (Plain English)
 
-* **The Math Must Add Up:** Purchase Price must exactly equal Deposit + Balance on Closing. The system will not let the agent continue if the numbers don't match.
+* **The Math Must Add Up:** Purchase Price must exactly equal Total Deposits (Initial + Additional/Supplementary) + Balance of Purchase Price on Closing. The system guarantees mathematical reconciliation before signing, while explicitly flagging that final closing funds are subject to closing adjustments (taxes, utilities, common expenses) prepared in the statement of adjustments.
 * **No Holiday Closings:** Land registry offices in Ontario are closed on weekends and statutory holidays (like Thanksgiving or Family Day). Closing dates must be valid business days.
 * **Single-Session Counter-Offers:** When a counter-offer is received, never create a brand-new blank contract. Show the previous price struck through with initials on the existing document chain (Ontario RECO best practice).
 * **Confirmation of Acceptance (COA):** The deal is only locked once the last party to accept signs the COA box on Page 5 of Form 100.
@@ -87,11 +87,20 @@ It lets the agent easily fill in all the key terms of the deal without making co
 export interface Form100OfferPayload {
   transactionId: string;
   offerVersionId: string; // e.g. "OFF-001-v1"
+  propertyDetails: {
+    municipalAddress: string;
+    sideOfStreet?: "NORTH" | "SOUTH" | "EAST" | "WEST";
+    frontageDepth?: string; // e.g. "50.00 ft x 120.00 ft"
+    legalDescription: string; // Lot, Plan/Concession, PIN
+    municipality: string;
+  };
   financialTerms: {
     purchasePrice: number;
     depositAmount: number;
     depositPayableMethod: "HEREWITH" | "UPON_ACCEPTANCE" | "AS_OTHERWISE_DESCRIBED";
-    balanceOfPurchasePrice: number; // purchasePrice - depositAmount
+    depositHolder: string; // e.g. "Listing Brokerage in Trust"
+    additionalDepositAmount?: number;
+    balanceOfPurchasePrice: number; // purchasePrice - (depositAmount + (additionalDepositAmount || 0)), subject to adjustments
   };
   scheduleTerms: {
     irrevocableDeadline: string; // ISO 8601 America/Toronto
@@ -120,7 +129,8 @@ export interface Form100OfferPayload {
 * `POST /api/v1/offers/{id}/accept-coa` — Records Confirmation of Acceptance timestamp.
 
 ### Developer Checklist
-- [ ] Validate `purchasePrice === depositAmount + balanceOfPurchasePrice` (return HTTP 422 on mismatch).
+- [ ] Validate `purchasePrice === depositAmount + (additionalDepositAmount || 0) + balanceOfPurchasePrice` (return HTTP 422 on mismatch).
+- [ ] Ensure `propertyDetails` contains required legal description (Lot/Plan/PIN) and frontage/depth before PDF generation.
 - [ ] Integrate Ontario holiday calendar to reject weekend/holiday `completionDate`.
 - [ ] Implement PDF stamping of strike-outs and initial boxes on counter-offer rounds.
 - [ ] Automated tests passing for QA cases `T-003`, `T-005`, `T-007`, and `T-008`.
