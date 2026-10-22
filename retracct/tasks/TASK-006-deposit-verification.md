@@ -23,87 +23,80 @@ tags:
 
 ---
 
-## 1. Technical Objective & User Context
+## 1. What This Feature Does (In Plain English)
 
-### Technical Objective (What Developers Build)
-Build the deposit timeline tracking service, statutory 24-hour countdown calculation, receipt evidence upload endpoint (`POST /deposits/{id}/receipt`), overdue escalation queue, and parallel fund state machine that decouples deposit receipt from contract firming.
+In Ontario real estate, once an offer is accepted, the buyer usually has **24 hours** to deliver the initial deposit (e.g. `$50,000`) into the listing brokerage's real estate trust account.
 
-### End-User Persona
-* **Primary User:** Licensed Real Estate Agent (Buyer Representative)
-* **Escalation User:** Broker of Record (BOR) / Trust Compliance Officer
-
-### Business Rationale & Domain Context
-Ontario REBBA/TRESA s.27 mandates deposit placement in a statutory real estate trust account within 5 business days, but standard OREA Form 100 contracts specify payment "upon acceptance" (within 24 hours). Under PRD Decision `Q20`, BROKO tracks deposit events and proof of funds without implementing general trust accounting ledger reconciliation (`T-011`).
+This task creates the **Deposit Tracker**:
+1. **24-Hour Countdown Clock:** The moment an offer is accepted, the system starts a live countdown: *"Deposit due in 23h 45m"*.
+2. **Attach Proof of Payment:** When the buyer pays via certified cheque, bank draft, or wire transfer, the agent simply snaps a photo or uploads the bank confirmation receipt.
+3. **Overdue Alerts:** If the 24 hours passes and no proof has been uploaded, the system immediately flags the deal as **Overdue** and alerts both the agent and the Broker of Record (brokerage owner).
+4. **Third-Party Holders:** If the deposit is being held elsewhere (for example, by the seller's lawyer or a builder instead of our brokerage), the system correctly notes that our brokerage is not holding the money.
+5. **Focused Scope:** This feature tracks proof of deposit and deadlines; it does **not** try to be a complicated bank accounting ledger.
 
 ---
 
-## 2. Technical Data Contract & Schema
+## 2. What the User Sees & Does on Screen (Step-by-Step)
 
+1. **Offer Accepted:** As soon as the offer is accepted, a prominent banner appears on the deal dashboard:
+   > ⏳ **Deposit Due:** $50,000.00 — Due by tomorrow at 6:00 PM (23h 52m remaining).
+2. **Upload Proof of Payment:**
+   * The agent clicks **"Record Deposit Receipt"**.
+   * Selects payment method: "Bank Draft / Certified Cheque" or "Wire Transfer".
+   * Enters the bank reference number.
+   * Uploads the photo or PDF receipt from the bank.
+3. **Status Turns Green:** The status badge changes to 🟢 **Deposit Received & Verified**.
+4. **If Overdue:** If 24 hours expire without proof, the banner turns red: 🔴 **Deposit Overdue (Alert sent to Broker of Record)**.
+
+---
+
+## 3. Real Estate & Legal Rules (Plain English)
+
+* **Statutory Timeline (TRESA s.27):** Under Ontario law, brokerages holding deposits must deposit funds into their statutory trust account within 5 business days of receipt, but purchase contracts typically require payment within 24 hours of acceptance.
+* **Firm Deal Decoupling (`Q20`):** In real estate law, a deal can be legally firm even if the deposit proof has not arrived yet. The software must **never** cancel or block a firm deal solely because the deposit is pending; it simply tracks the overdue status and notifies the broker.
+* **Held Elsewhere (`A-03`):** If the listing brokerage or lawyer is holding the funds, our brokerage is not liable as the depository holder.
+
+---
+
+## 4. How Anyone Can Test It (Without Technical Knowledge)
+
+- [ ] On an accepted deal, verify the 24-hour countdown timer is ticking down in real time.
+- [ ] Click "Record Deposit Receipt", select "Wire Transfer", type a reference number, and upload a receipt image.
+- [ ] Confirm the dashboard turns green (*Deposit Received & Verified*).
+- [ ] In a test deal where deadline has passed, verify the red *Overdue* badge appears and an alert is visible in the Broker of Record queue.
+
+---
+
+## 5. Technical Blueprint for Developers (Code, APIs & Database)
+
+<details>
+<summary><b>Click to expand developer specifications (Schemas, APIs & Checklists)</b></summary>
+
+### TypeScript Data Schema
 ```typescript
 export interface DepositTrackingPayload {
   transactionId: string;
   depositRecordId: string;
-  depositType: "INITIAL_DEPOSIT" | "ADDITIONAL_DEPOSIT";
-  amount: number; // e.g. 50,000.00 CAD
-  payableTiming: "HEREWITH" | "UPON_ACCEPTANCE" | "AS_OTHERWISE_DESCRIBED";
-  dueTimestamp: string; // ISO 8601 (e.g. 24 hours after agreement acceptance)
-  holderClassification: "LISTING_BROKERAGE" | "CO_OPERATING_BROKERAGE" | "SELLER_LAWYER" | "BUYER_LAWYER" | "BUILDER";
-  holderEntityName: string; // e.g. "Royal LePage Real Estate Services Ltd., Brokerage"
-  status: "EXPECTED" | "INSTRUCTIONS_SENT" | "RECEIVED_CONFIRMED" | "OVERDUE" | "DISPUTED";
+  amount: number;
+  dueTimestamp: string; // ISO 8601 America/Toronto
+  holderClassification: "LISTING_BROKERAGE" | "CO_OPERATING_BROKERAGE" | "LAWYER" | "BUILDER";
+  status: "EXPECTED" | "RECEIVED_CONFIRMED" | "OVERDUE";
   receiptEvidence?: {
-    evidenceDocumentId: string; // File UUID (e.g. wire confirmation PDF or certified cheque photo)
-    paymentMethod: "WIRE_TRANSFER" | "CERTIFIED_CHEQUE" | "BANK_DRAFT" | "DIRECT_DEPOSIT";
+    documentId: string;
+    paymentMethod: "WIRE_TRANSFER" | "BANK_DRAFT";
     referenceNumber: string;
-    receivedDate: string; // YYYY-MM-DD
-    uploadedByUserId: string;
-    verifiedByCompliance: boolean;
+    receivedDate: string;
   };
 }
 ```
 
----
+### Endpoints to Implement
+* `POST /api/v1/transactions/{id}/deposits/{depositId}/receipt` — Attaches proof document and updates state.
+* Scheduled cron job checking for upcoming (2h warning) and overdue deposits.
 
-## 3. Core Acceptance Criteria
+### Developer Checklist
+- [ ] Compute 24-hour due date from agreement acceptance timestamp.
+- [ ] Decouple deposit state from transaction firm state (satisfies QA test `T-011`).
+- [ ] Handle deposits held by third parties (satisfies QA test `T-013`).
 
-- [ ] **Due Date Calculation Engine:**
-  - If `payableTiming` is `UPON_ACCEPTANCE`: Computes deadline as precisely 24 hours from contract execution in Ontario timezone (`America/Toronto`), accounting for weekend/holiday guidelines where defined by contract clause.
-  - If `AS_OTHERWISE_DESCRIBED`: Computes due date from Schedule A clause parameter (e.g., "within 3 business days of acceptance").
-- [ ] **Deposit Decoupling from Firm Status (`Q20`, `T-011`):**
-  - An offer can be unconditional and legally firm even if deposit evidence is pending verification.
-  - The system must **NOT** hard-block the firm deal status solely due to pending deposit receipt, but must maintain an independent, prominent **Deposit Alert Badge**.
-- [ ] **Evidence & Proof Attachment:**
-  - Enforces upload of documentary proof (bank draft scan, wire receipt, receipt confirmation from listing brokerage) to mark status as `RECEIVED_CONFIRMED`.
-  - Captures payment reference number and receiving institution.
-- [ ] **Overdue Escalation Workflow:**
-  - Automatically triggers alert notification to Buyer Agent and Broker of Record (BOR) if deposit is not confirmed within 2 hours of due timestamp.
-- [ ] **Held Elsewhere Handling (`A-03`, `T-013`):**
-  - Properly classifies deposits held by third parties (Seller's Lawyer, Listing Brokerage, or Builder).
-  - Adjusts FINTRAC and trust receipt obligations to reflect that our brokerage is not the depository holder.
-- [ ] **Audit Trail Events:**
-  - `DEPOSIT_EXPECTATION_SCHEDULED`
-  - `DEPOSIT_RECEIPT_SUBMITTED`
-  - `DEPOSIT_VERIFIED_BY_COMPLIANCE`
-  - `DEPOSIT_OVERDUE_ALERT_TRIGGERED`
-
----
-
-## 4. Implementation Steps
-
-1. **Deposit Service Layer:**
-   - Build `DepositManagementService` with methods: `scheduleDeposit()`, `recordReceipt()`, `evaluateOverdueStatus()`.
-   - Setup scheduled cron job checking for upcoming and overdue deposits.
-2. **Deposit Receipt Upload API:**
-   - Endpoint: `POST /api/v1/transactions/{id}/deposits/{depositId}/receipt`.
-   - Store evidence document and update deposit state machine.
-3. **UI Deposit Countdown & Receipt Card:**
-   - Display countdown timer on deal dashboard: "Deposit due in 14h 22m".
-   - Status badge transitions: Blue (`Expected`) → Yellow (`Due Soon`) → Green (`Received`) → Red (`Overdue`).
-4. **Compliance Reporting:**
-   - Include deposit receipt confirmation in the TCS export bundle.
-
----
-
-## 5. Verification & QA Test Links
-
-- [ ] `T-011`: Deposit independent status test — verify deal transitions to firm independently of deposit status while deposit escalation is raised.
-- [ ] `T-013`: Deposit held elsewhere test — verify handling of direct builder/listing brokerage trust deposits without false trust-ledger accounting assumptions.
+</details>

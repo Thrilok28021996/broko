@@ -24,91 +24,86 @@ tags:
 
 ---
 
-## 1. Technical Objective & User Context
+## 1. What This Feature Does (In Plain English)
 
-### Technical Objective (What Developers Build)
-Build the condition countdown engine in the Ontario timezone (`America/Toronto`), accounting for statutory holidays and business days, resolution workflows for Notice of Fulfillment (OREA 124) and Waiver (OREA 123) uploads, automatic deal status progression to `FIRM`, and an `EXPIRED_UNRESOLVED` escalation state.
+Most residential purchases in Ontario are **Conditional Deals** (e.g., *"This deal is conditional for 5 business days upon the buyer arranging a satisfactory mortgage, and 5 business days for a home inspection"*).
 
-### End-User Persona
-* **Primary User:** Licensed Real Estate Agent (Buyer Representative)
-* **Supervisory User:** Broker of Record (BOR)
-
-### Business Rationale & Domain Context
-In conditional real estate purchases, financing and inspection conditions must be satisfied or waived prior to precise irrevocable deadlines. Under PRD Decision `Q19`, if a condition deadline passes without resolution documents, the software must never unilaterally cancel the agreement; it must flag `EXPIRED_UNRESOLVED` and escalate to human stakeholders (`T-008`).
+This task creates the **Condition Countdown & Resolution Engine**:
+1. **Live Countdown Rings:** The deal dashboard displays a visual countdown clock for each condition so the agent never misses a deadline.
+2. **Ontario Holiday & Business-Day Smart:** The system knows Ontario statutory holidays (Family Day, Victoria Day, Thanksgiving, etc.) and weekends. If a condition says "5 business days", it automatically skips Saturdays, Sundays, and holidays.
+3. **Fulfilling Conditions:** When the bank approves the loan, the agent uploads or signs the official **Notice of Fulfillment (OREA Form 124)**.
+4. **Waiving Conditions:** If the buyer decides to skip the inspection, the agent uploads the signed **Waiver (OREA Form 123)**.
+5. **Automatic Firm Deal:** The instant the last condition is marked fulfilled or waived, the entire transaction automatically flips to **FIRM** (a completed, binding sale!).
+6. **No Silent Cancellations:** If a deadline expires without paperwork, the system raises an alert; it **never** unilaterally declares the deal dead without human review.
 
 ---
 
-## 2. Technical Data Contract & Schema
+## 2. What the User Sees & Does on Screen (Step-by-Step)
 
+1. **Conditional Dashboard View:**
+   * **Condition 1:** 🏦 *Mortgage Financing Approval* — 🟢 3 days 14 hours remaining.
+   * **Condition 2:** 🔍 *Home Inspection* — 🟢 3 days 14 hours remaining.
+2. **Financing Gets Approved:**
+   * The buyer's bank sends the mortgage commitment.
+   * The agent clicks **"Fulfill Condition"** next to Mortgage Financing.
+   * The agent uploads the signed OREA Form 124 (Notice of Fulfillment).
+   * Status turns to 🟢 **Fulfilled**.
+3. **Inspection Passes:**
+   * The home inspection report comes back clean.
+   * The agent clicks **"Waive Condition"** next to Home Inspection and attaches signed Form 123.
+   * Status turns to 🟢 **Waived**.
+4. **Deal Goes Firm:**
+   * A celebration banner appears: 🎉 **Transaction is now FIRM!**
+   * The system automatically prepares the file for conveyancing and closing.
+
+---
+
+## 3. Real Estate & Legal Rules (Plain English)
+
+* **Exact Ontario Timezone:** All condition expiries calculate strictly in Ontario time (`America/Toronto`), accounting for Daylight Saving Time changes.
+* **Proper Forms Required:**
+  * To *fulfill* a condition: Use OREA Form 124 (Notice of Fulfillment).
+  * To *waive* a condition: Use OREA Form 123 (Waiver).
+  * To *extend* a deadline: Use OREA Form 120 (Amendment).
+* **No Autonomous Forfeiture (`Q19`):** If a deadline passes, the status changes to `EXPIRED_UNRESOLVED` and notifies the agent. The software must never make an autonomous legal determination to cancel a deal.
+
+---
+
+## 4. How Anyone Can Test It (Without Technical Knowledge)
+
+- [ ] On a conditional deal with a 5-day condition created on a Thursday, verify the countdown skips Saturday and Sunday.
+- [ ] Click "Fulfill Condition", attach a test Notice of Fulfillment (Form 124), and verify the badge turns green (*Fulfilled*).
+- [ ] Waive the remaining condition and verify the transaction banner immediately changes from *Conditional* to *FIRM*.
+- [ ] In a test case where deadline has expired, confirm status shows *Expired / Unresolved* with an urgent action banner.
+
+---
+
+## 5. Technical Blueprint for Developers (Code, APIs & Database)
+
+<details>
+<summary><b>Click to expand developer specifications (Schemas, APIs & Checklists)</b></summary>
+
+### TypeScript Data Schema
 ```typescript
 export interface ConditionResolutionPayload {
   transactionId: string;
   conditionId: string;
-  resolutionType: "FULFILLMENT" | "WAIVER" | "AMENDMENT" | "MUTUAL_RELEASE";
+  resolutionType: "FULFILLMENT" | "WAIVER" | "AMENDMENT";
   documentDetails: {
-    formUsed: "OREA_FORM_124_NOTICE_OF_FULFILLMENT" | "OREA_FORM_123_WAIVER" | "OREA_FORM_120_AMENDMENT" | "OREA_FORM_122_MUTUAL_RELEASE";
-    documentId: string; // UUID of executed PDF
-    signedAt: string;   // ISO 8601
-    deliveredToCounterpartyAt: string; // ISO 8601
+    formUsed: "OREA_FORM_124_NOTICE_OF_FULFILLMENT" | "OREA_FORM_123_WAIVER" | "OREA_FORM_120_AMENDMENT";
+    documentId: string;
+    signedAt: string;
   };
-  benefitingPartyAcknowledged: boolean;
-  notes?: string;
-}
-
-export interface ConditionStateRecord {
-  conditionId: string;
-  title: string; // e.g. "Buyer Financing Approval"
-  clauseType: "MORTGAGE" | "INSPECTION" | "LAWYER_REVIEW" | "STATUS_CERTIFICATE";
-  irrevocableDeadline: string; // ISO 8601 America/Toronto
-  daysRemaining: number;
-  hoursRemaining: number;
-  status: "ACTIVE" | "EVIDENCE_SUBMITTED" | "FULFILLED" | "WAIVED" | "EXPIRED_UNRESOLVED" | "TERMINATED";
 }
 ```
 
----
+### Endpoints to Implement
+* `POST /api/v1/conditions/{id}/resolve` — Handles fulfillment/waiver and triggers firm deal state machine evaluator.
+* Automated deadline scheduler evaluating reminders at 72h, 24h, and 4h prior to expiry.
 
-## 3. Core Acceptance Criteria
+### Developer Checklist
+- [ ] Build `OntarioCalendarService` with cached Ontario statutory holidays (Family Day, Victoria Day, Canada Day, etc.).
+- [ ] Trigger automatic transition to `FIRM` when `COUNT(activeConditions) === 0`.
+- [ ] Mark missed deadlines as `EXPIRED_UNRESOLVED` without terminating deal (satisfies QA test `T-008`).
 
-- [ ] **Exact Ontario Deadline Calculation Engine (`TM-013`, `T-008`):**
-  - All condition deadlines calculate in `America/Toronto` timezone.
-  - Distinguishes accurately between **Calendar Days** and **Ontario Business Days** (excluding Saturdays, Sundays, and Ontario statutory holidays: Family Day, Good Friday, Victoria Day, Canada Day, Civic Holiday, Labour Day, Thanksgiving, Christmas, Boxing Day).
-  - Handles Daylight Saving Time (DST) shifts seamlessly without 1-hour calculation errors (`T-008`).
-- [ ] **Structured Resolution Workflows:**
-  - **Fulfillment:** Requires executed OREA Form 124 (Notice of Fulfillment) signed by the party whose benefit the condition was inserted for.
-  - **Waiver:** Requires executed OREA Form 123 (Waiver) signed by the benefiting party.
-  - **Amendment:** If parties extend deadline, links signed OREA Form 120 and recalculates countdown timer.
-  - **Mutual Release:** If condition cannot be met, triggers OREA Form 122 workflow and advances transaction to `TERMINATED`.
-- [ ] **Automatic Deal State Transition:**
-  - When **ALL** active conditions on a transaction reach status `FULFILLED` or `WAIVED`, the transaction automatically transitions from `ACCEPTED_CONDITIONAL` to `FIRM`.
-- [ ] **No Silent Missed Deadline Execution (`Q19`):**
-  - If a deadline passes without a signed fulfillment or waiver, the condition state changes to `EXPIRED_UNRESOLVED` and generates urgent BOR/agent alerts.
-  - The system **NEVER** makes an autonomous legal determination of deal termination without human confirmation.
-- [ ] **Audit Trail Events:**
-  - `CONDITION_ACTIVATED`
-  - `CONDITION_DEADLINE_APPROACHING_ALERT`
-  - `CONDITION_FULFILLED`
-  - `CONDITION_WAIVED`
-  - `TRANSACTION_STATUS_CHANGED_TO_FIRM`
-
----
-
-## 4. Implementation Steps
-
-1. **Date & Holiday Calculation Utility:**
-   - Implement `OntarioCalendarService` with cached statutory holiday table (2026–2035).
-   - Methods: `addBusinessDays(startDate, count, cutoffTime)`, `isBusinessDay(date)`.
-2. **Condition State Machine Service:**
-   - Implement transition matrix (`ACTIVE` → `EVIDENCE_SUBMITTED` → `FULFILLED` / `WAIVED` / `EXPIRED_UNRESOLVED`).
-   - Trigger deal firming evaluator when any condition status updates.
-3. **UI Real-Time Countdown Cards:**
-   - Display circular progress ring showing time remaining (Green > 48h, Amber 12–48h, Red < 12h).
-   - "Fulfill Condition" modal prompting for OREA 124 upload or e-signature dispatch.
-4. **Notification Dispatcher:**
-   - Send automated reminders at 72h, 24h, and 4h prior to condition expiry.
-
----
-
-## 5. Verification & QA Test Links
-
-- [ ] `T-008`: Ontario timezone, statutory holiday, and DST condition countdown verification.
+</details>

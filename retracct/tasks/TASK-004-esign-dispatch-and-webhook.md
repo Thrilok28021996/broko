@@ -23,100 +23,88 @@ tags:
 
 ---
 
-## 1. Technical Objective & User Context
+## 1. What This Feature Does (In Plain English)
 
-### Technical Objective (What Developers Build)
-Build the electronic signature integration adapter (`POST /integrations/esign/dispatch`) to send Form 100 packages to signers, and construct an HMAC-authenticated, idempotent webhook receiver (`POST /integrations/esign/webhook`) with Redis deduplication to ingest completion certificates and signed PDFs.
+Once an offer or representation contract is drafted, it needs to be signed by the buyers.
 
-### End-User Persona
-* **Initiator:** Licensed Real Estate Agent (Realtor)
-* **Signers:** Buyer Client(s) (Signer 1, Co-Signer 2)
-
-### Business Rationale & Domain Context
-Ontario’s Electronic Commerce Act permits binding digital contract execution provided that independent audit trails (IP addresses, timestamps, signing certificates) are securely retained. E-sign callbacks are vulnerable to network retries, requiring duplicate-safe idempotent handlers (`T-020`) and external upload fallbacks (`T-010`).
+This task sets up the **Electronic Signature** system:
+1. **Send for Signature:** With one click, the agent sends the contract to the buyer's email so they can review and sign it on their phone, tablet, or laptop.
+2. **Signature Placement:** The system automatically places the signature lines, initials, and date tags in the exact right spots on the OREA forms so the buyer doesn't miss any initials.
+3. **Real-Time Tracking:** The agent can see in real-time when the buyer has opened the document and signed it.
+4. **Legal Certificate:** When everyone finishes signing, the system automatically pulls back the completed PDF along with a tamper-evident audit certificate (recording IP address, timestamp, and identity proof) for Ontario legal compliance.
+5. **Fallback:** If an e-sign provider has a technical glitch, the agent can easily switch to manual signing without losing any of the typed terms.
 
 ---
 
-## 2. Technical Data Contract & Schema
+## 2. What the User Sees & Does on Screen (Step-by-Step)
 
+1. **Click Send for Signing:** On the completed Form 100 offer, the agent clicks **"Send for E-Signature"**.
+2. **Review Signers:** The screen lists the buyers (e.g. Buyer 1 and Buyer 2) with their email addresses. The agent confirms the signing order.
+3. **Buyer Experience:**
+   * The buyer receives an email: *"Your agent has prepared an offer for 123 Maple Street. Click here to review and sign."*
+   * The buyer clicks the link, initials each page of Form 100 and Schedule A, signs the signature block, and clicks **Finish**.
+4. **Agent Dashboard Live Updates:**
+   * Dashboard shows progress: ✉️ *Sent* $\rightarrow$ 👁️ *Viewed by Buyer 1* $\rightarrow$ ✍️ *Signed by Buyer 1 (1/2)* $\rightarrow$ 🟢 *Fully Executed*.
+5. **Completed Documents Stored:** Once complete, the executed PDF and the audit trail certificate are safely saved in the transaction files.
+
+---
+
+## 3. Real Estate & Legal Rules (Plain English)
+
+* **Ontario Electronic Commerce Act Compliance:** Digital signatures are 100% legally binding in Ontario real estate, provided the platform retains a verified audit log showing who signed, when, and from what IP address.
+* **All Initials Required:** Every page of OREA Form 100 has a mandatory initial box at the bottom. The system must not allow the buyer to submit until every single page is initialed.
+* **Network Glitch Safety:** If the e-signature service sends duplicate completion messages over the internet, the system must process it cleanly without duplicating the document in the file.
+
+---
+
+## 4. How Anyone Can Test It (Without Technical Knowledge)
+
+- [ ] In a draft offer, click "Send for E-Signature" to send to your own test email.
+- [ ] Open the email on your phone, click the link, and verify initial and signature tabs are highlighted in yellow on Form 100.
+- [ ] Sign the document and click finish.
+- [ ] Return to the agent screen and confirm the status has automatically turned to "Fully Signed & Verified".
+- [ ] Open the completed document from the files tab and verify the audit certificate is attached to the back.
+
+---
+
+## 5. Technical Blueprint for Developers (Code, APIs & Database)
+
+<details>
+<summary><b>Click to expand developer specifications (Schemas, APIs & Checklists)</b></summary>
+
+### TypeScript Data Schema
 ```typescript
 export interface ESignEnvelopeDispatchPayload {
   transactionId: string;
   documentId: string;
-  envelopeTitle: string; // e.g. "Form 100 - 123 Maple Street - Buyer Offer"
+  envelopeTitle: string;
   signers: Array<{
     partyId: string;
-    role: "BUYER_1" | "BUYER_2" | "BUYER_AGENT";
-    legalName: string;
+    role: "BUYER_1" | "BUYER_2";
+    name: string;
     email: string;
-    phoneForSMSAuth?: string;
     signingOrder: number;
-    signaturePlacement: Array<{
-      pageNumber: number;
-      xCoord: number;
-      yCoord: number;
-      type: "SIGNATURE" | "INITIAL" | "DATE";
-    }>;
   }>;
-  webhookCallbackUrl: string;
-  expiresInDays: number; // e.g. 3 days or matching irrevocable time
 }
 
 export interface ESignWebhookEventPayload {
   eventId: string;
-  provider: "DOCUSIGN" | "SIGNNOW" | "NATIVE_ESIGN";
+  provider: "DOCUSIGN" | "SIGNNOW" | "NATIVE";
   envelopeId: string;
-  eventType: "envelope.sent" | "envelope.delivered" | "recipient.completed" | "envelope.completed" | "envelope.declined";
-  timestamp: string; // ISO 8601
+  eventType: "envelope.completed";
+  signedPdfDownloadUrl: string;
   certificateHashSha256: string;
-  downloadSignedPdfUrl: string;
 }
 ```
 
----
+### Endpoints to Implement
+* `POST /api/v1/integrations/esign/dispatch` — Prepares tabs and creates provider envelope.
+* `POST /api/v1/integrations/esign/webhook` — HMAC validated webhook handler with Redis idempotency lock.
 
-## 3. Core Acceptance Criteria
+### Developer Checklist
+- [ ] Pre-map OREA Form 100 initial coordinates (pages 1–6) and signature block (page 5).
+- [ ] Store provider certificate hash and downloaded PDF in encrypted storage.
+- [ ] Deduplicate webhooks using Redis `SETNX esign_event:{eventId}` lock.
+- [ ] Automated tests passing for QA cases `T-010` and `T-020`.
 
-- [ ] **Envelope Generation & Placement:**
-  - Generates signing envelope with pre-mapped signature tabs on Form 100 (Page 1 initials, confirmation initials, and signature block Page 5/6).
-  - Enforces sequential or parallel signing order for multi-party buyers.
-- [ ] **Idempotent Webhook Processing (`TM-023`, `T-020`):**
-  - Webhook endpoint (`POST /api/v1/integrations/esign/webhook`) validates provider HMAC signature before processing.
-  - Dedupes duplicate delivery events using `eventId` cache.
-  - Safely transitions document state from `SENT` → `PARTIALLY_SIGNED` → `VERIFIED_EXECUTED`.
-- [ ] **Certificate & Proof Retention:**
-  - Automatically downloads and attaches the independent signing certificate (audit trail showing IP address, email, timestamp, and cryptographically verified hash).
-  - Stores signed PDF in encrypted document vault with SHA-256 fingerprinting.
-- [ ] **Fallback / Failure Handling (`T-010`):**
-  - If e-signing provider experiences an outage or email bounce, allows agent to cancel envelope and pivot to external manual signing without losing drafted form data.
-- [ ] **Audit Trail Events:**
-  - `ESIGN_ENVELOPE_DISPATCHED`
-  - `RECIPIENT_SIGNED`
-  - `DOCUMENT_EXECUTION_COMPLETED`
-  - `SIGNATURE_CERTIFICATE_VERIFIED`
-
----
-
-## 4. Implementation Steps
-
-1. **Integration Adapter Layer:**
-   - Define `ESignatureProvider` interface (`createEnvelope`, `getEnvelopeStatus`, `downloadSignedDocument`).
-   - Implement provider adapter with mock mode for unit tests and local development.
-2. **Webhook Controller:**
-   - Construct `/api/v1/integrations/esign/webhook` with replay-attack protection and HMAC validation.
-   - Use redis-backed deduplication lock.
-3. **Storage Pipeline:**
-   - Stream downloaded signed PDF directly to private S3/GCS bucket; compute SHA-256 checksum.
-4. **Front-End Status Widget:**
-   - Display real-time signing progression:
-     - ✉️ Envelope Sent
-     - 👁️ Opened by Buyer 1
-     - ✍️ Signed by Buyer 1 (1/2)
-     - ✅ Fully Executed & Verified
-
----
-
-## 5. Verification & QA Test Links
-
-- [ ] `T-010`: Provider failure fallback test — verify system safely handles provider interruptions and permits fallback without corruption.
-- [ ] `T-020`: Duplicate callback idempotency test — simulate duplicate webhook delivery and verify only one state transition occurs.
+</details>

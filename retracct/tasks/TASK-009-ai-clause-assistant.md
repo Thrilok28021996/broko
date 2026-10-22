@@ -6,8 +6,8 @@ status: todo
 priority: P1
 sprint: sprint-1-poc
 assignee: "Eng Team"
-requirement: "[[retracct/05-matrices/requirements-matrix|TM-012, TM-020]]"
-qa_case: "[[retracct/05-matrices/qa-cases|T-007, T-017]]"
+requirement: "[[retracct/05-matrices/requirements-matrix|TM-011, TM-012, TM-020]]"
+qa_case: "[[retracct/05-matrices/qa-cases|T-005, T-007, T-017]]"
 tags:
   - task
   - ai-bot
@@ -24,113 +24,93 @@ tags:
 
 ---
 
-## 1. Technical Objective & User Context
+## 1. What This Feature Does (In Plain English)
 
-### Technical Objective (What Developers Build)
-Build the Clause Registry service seeded with the 10 standard OREA conditions, conversational NLP variable extraction endpoint (`POST /clauses/prompt-session`), Personal vs Office clause scoping, AI counteroffer difference summarizer (`GET /offers/{id}/diff`), and an approval staging modal requiring explicit human confirmation before Schedule A insertion.
+When drafting an offer, real estate agents must insert legal clauses into Schedule A (e.g. protecting the buyer if they cannot get a mortgage or if the home inspection reveals major defects).
 
-### End-User Persona
-* **Primary User:** Licensed Real Estate Agent (Realtor) drafting offers or reviewing counteroffers
-* **Supervisory User:** Broker of Record (curating the brokerage Office Clause library)
+In Ontario real estate practice, agents have used the same **10 standard clauses** from the official OREA clause booklet for over 30 years.
 
-### Business Rationale & Domain Context
-Ontario real estate transactions rely on ~10 time-tested standard OREA clauses that require specific parameterization (e.g. 5 business days, 4.2% rate cap, $600k principal). Under PRD Decisions `Q13` and `Q14`, AI cannot autonomously alter executed legal contracts; all AI-suggested clauses and counteroffer diffs must be staged for human review, and client PII must be sanitized from prompts (`TM-020`, `T-007`).
+This task creates the **AI Clause Assistant & Parameter Bot**:
+1. **Interactive Clause Assistant:** Instead of hunting through PDF booklets or typing out long legal paragraphs, the agent simply clicks or types: *"Mortgage condition for 5 days"*.
+2. **Conversational Prompts:** The bot asks simple, targeted questions to fill in the blanks:
+   > *"Mortgage condition for 5 business days? What is the maximum interest rate (e.g. 4.2%) and loan amount?"*
+3. **Office vs. Personal Clauses:**
+   * **Office Clauses:** Master templates approved by the Broker of Record for the entire brokerage.
+   * **Personal Clauses:** Customized clauses saved by an individual agent for frequent reuse.
+4. **Mandatory Human Approval Gate (`Q14`):** The AI **never** secretly inserts a clause into a legal contract. It displays the drafted clause in a review box, and the agent must click **"Approve & Insert into Schedule A"**.
+5. **AI Counter-Offer Summarizer:** When the other agent sends back a counteroffer, the bot automatically compares the two documents and gives a 3-bullet summary: *"Price increased by $95,000, closing date unchanged, seller changed expiry to tomorrow 8:00 PM"*.
 
 ---
 
-## 2. Technical Data Contract & Schema
+## 2. What the User Sees & Does on Screen (Step-by-Step)
 
+1. **Open Clause Drawer:** In the Schedule A section of an offer, the agent clicks **"Clause Assistant"**.
+2. **Select Standard Clause or Type Intent:**
+   * **Option A:** Select from the 10 Standard Clauses (Mortgage, Inspection, Lawyer Review, Property Access, Insurance, etc.).
+   * **Option B:** Type plain English: *"Buyer wants 2 visits before closing to measure rooms for furniture"*.
+3. **Bot Prompts Variables:**
+   * The assistant asks: *"Pre-closing access condition: How many visits (default: 2)? How many hours each visit (default: 1 hour)?"*
+4. **Instant Clause Preview:**
+   * The bot generates the exact standard legal clause:
+     > *"The Buyer shall have the right to visit the property 2 times prior to closing, for a period not exceeding 1 hour each visit, upon giving 24 hours written notice..."*
+5. **Click to Insert:** The agent reviews the text and clicks **"Approve & Add to Offer"**. The clause is safely added to Schedule A.
+
+---
+
+## 3. Real Estate & Legal Rules (Plain English)
+
+* **Human-in-the-Loop (`Q14`):** In real estate law, software cannot autonomously bind clients to contractual terms. Every AI-suggested clause requires explicit human agent approval.
+* **Client Privacy Firewall (`Q26`, `TM-020`):** Client private data (such as driver's licenses, SIN numbers, or personal banking info) must **never** be sent to external AI services. Only sanitized clause parameters (e.g. dates, interest rates, visit counts) are processed.
+* **10 Time-Tested Categories:** Seeds the baseline library with standard clauses: New Mortgage, Mortgage Assumption, Inspection, Lawyer Review, Access Visits, Insurance, Deposit Balance, Deposit Increase, Assignment, and Status Certificate.
+
+---
+
+## 4. How Anyone Can Test It (Without Technical Knowledge)
+
+- [ ] In Schedule A, open the Clause Assistant and type *"Need 5 days financing at 4.2% rate for 600k"*.
+- [ ] Verify the bot asks any missing questions and generates the Mortgage Financing clause with 5 days, 4.2%, and $600,000 properly filled in.
+- [ ] Confirm the clause does not appear in Schedule A until you explicitly click "Approve & Add to Offer".
+- [ ] In an incoming counteroffer, click "Summarize Differences" and confirm the bot displays the price change and date changes clearly.
+
+---
+
+## 5. Technical Blueprint for Developers (Code, APIs & Database)
+
+<details>
+<summary><b>Click to expand developer specifications (Schemas, APIs & Checklists)</b></summary>
+
+### TypeScript Data Schema
 ```typescript
 export interface ClauseDefinition {
   clauseId: string;
-  category: "MORTGAGE" | "INSPECTION" | "LAWYER_REVIEW" | "PROPERTY_ACCESS" | "INSURANCE" | "DEPOSIT_BALANCE" | "ASSIGNMENT" | "CUSTOM";
-  libraryScope: "OFFICE" | "PERSONAL" | "STANDARD_OREA";
-  title: string; // e.g. "Buyer Arranging New First Mortgage"
-  templateText: string; // Template with mustache variables, e.g. "This Offer is conditional upon the Buyer arranging a new first mortgage of not less than ${{principalAmount}}..."
+  category: "MORTGAGE" | "INSPECTION" | "LAWYER_REVIEW" | "PROPERTY_ACCESS" | "INSURANCE";
+  libraryScope: "STANDARD_OREA" | "OFFICE" | "PERSONAL";
+  title: string;
+  templateText: string;
   variableDefinitions: Array<{
     key: string;
     label: string;
-    type: "INTEGER_DAYS" | "CURRENCY" | "PERCENTAGE" | "DATE" | "STRING";
-    defaultValue?: any;
-    promptQuestion: string; // e.g. "How many business days do you need for mortgage financing?"
+    type: "INTEGER_DAYS" | "PERCENTAGE" | "CURRENCY";
+    promptQuestion: string;
   }>;
 }
 
 export interface ClausePromptSession {
   sessionId: string;
-  transactionId: string;
-  agentIntentInput: string; // e.g. "Need mortgage condition 5 days at 4.2% rate for 600k"
-  detectedClauseId?: string;
-  extractedParameters: Record<string, any>; // { durationBusinessDays: 5, interestRateCapPercent: 4.2, principalAmount: 600000 }
+  agentIntentInput: string;
+  extractedParameters: Record<string, any>;
   generatedClauseText: string;
-  confidenceScore: number;
-  approvalStatus: "PENDING_AGENT_APPROVAL" | "APPROVED" | "REJECTED" | "MODIFIED";
+  approvalStatus: "PENDING_AGENT_APPROVAL" | "APPROVED";
 }
 ```
 
----
+### Endpoints to Implement
+* `POST /api/v1/clauses/prompt-session` — NLP parameter extractor returning structured proposal.
+* `GET /api/v1/offers/{id}/diff` — Compares current offer against parent version and outputs bulleted change summary.
 
-## 3. Core Acceptance Criteria
+### Developer Checklist
+- [ ] Seed database with the 10 standard OREA clauses and mustache variable definitions.
+- [ ] Sanitize prompt payloads before external API calls to block client PII (satisfies QA test `T-017`).
+- [ ] Require explicit human approval event (`AI_CLAUSE_APPROVED`) before appending to Schedule A (satisfies QA test `T-007`).
 
-- [ ] **Standard 10-Clause Baseline Seed:**
-  - Seeds the system with the 10 time-tested standard OREA clause definitions:
-    1. *New First Mortgage* (days, principal amount, max interest rate %, amortization).
-    2. *Assumption of Existing Mortgage* (interest rate, lender approval days).
-    3. *Home Inspection* (licensed inspector, repair threshold, business days).
-    4. *Lawyer Review of APS* (business days).
-    5. *Pre-Closing Property Access* (number of visits, notice required, hour duration).
-    6. *Property Insurance Approval* (business days).
-    7. *Deposit Balance of Purchase Price* (due date, certified funds).
-    8. *Deposit Increase Installment* (staged payment dates).
-    9. *Assignment Right* (builder/seller consent terms).
-    10. *Condo Status Certificate Review* (days to receive, days to review).
-- [ ] **Conversational Parameterization Bot Flow:**
-  - When the agent clicks or mentions "Mortgage Condition", the assistant asks targeted questions:
-    - *"Mortgage condition for 5 business days? Anything else you want to mention (e.g., maximum interest rate or principal)?"*
-  - Automatically maps answers to typed variables and renders the exact clause text with no blank placeholders.
-- [ ] **Office vs. Personal Library Scoping (`Q13`):**
-  - **Office Library:** Brokerage-curated templates visible to all brokerage agents, editable only by Broker of Record / Admins.
-  - **Personal Library:** Agent-saved clause snippets with custom default parameters.
-- [ ] **Mandatory Human-in-the-Loop Review (`Q14`, `T-007`):**
-  - AI proposals are displayed in an **Approval Staging Modal**.
-  - The system **NEVER** silently inserts an AI-generated or custom clause into Schedule A without explicit agent confirmation.
-- [ ] **AI Counteroffer Difference Summarizer:**
-  - Compares previous offer version against incoming counteroffer PDF/version.
-  - Generates clear bulleted difference list:
-    - *Purchase Price:* e.g. `$1,150,000` $\rightarrow$ `$1,245,000` (+ $95,000).
-    - *Irrevocable Expiry:* e.g. `2026-10-19 23:59` $\rightarrow$ `2026-10-21 23:59` (+ 2 days).
-    - *Schedule A Conditions:* Identifies any added, struck-out, or modified clauses.
-  - Presents 3 immediate action triggers: `[Accept Counter]`, `[Counter Round N+1]`, `[Reject / Terminate]`.
-- [ ] **Data Privacy & No Unapproved Model Egress (`Q26`, `TM-020`, `T-017`):**
-  - Ensures private client identity documents (e.g. driver's licenses, SIN numbers, bank account numbers) are never piped to external AI models.
-  - Clause intent prompts only pass sanitized parameters (dates, amounts, property address).
-- [ ] **Audit Trail Events:**
-  - `AI_CLAUSE_PROMPTED`
-  - `AI_CLAUSE_PARAMETERS_EXTRACTED`
-  - `AI_CLAUSE_APPROVED_BY_AGENT`
-
----
-
-## 4. Implementation Steps
-
-1. **Clause Registry Service:**
-   - Store baseline OREA clauses in database table `clause_definitions` with JSON variable schema.
-   - Implement CRUD endpoints for Personal vs Office clauses.
-2. **Interactive NLP / Parameter Extractor:**
-   - Implement `ClauseAssistantService.parseIntent(input: string)` using structured tool calling / schema extraction.
-   - Match input against standard templates; if no exact template matches, generate draft with explicit disclaimer.
-3. **UI Chat / Assistant Drawer:**
-   - Collapsible drawer inside Form 100 Schedule A editor:
-     - Suggested standard clauses list.
-     - Natural language input bar: *"Type condition or select template..."*
-     - Parameter prompt bubbles.
-     - "Review & Insert to Schedule A" confirmation button.
-4. **Guardrail Enforcer:**
-   - Sanitize prompt payloads before calling AI service; block any payloads containing PII.
-
----
-
-## 5. Verification & QA Test Links
-
-- [ ] `T-007`: AI clause drafting approval test — verify custom drafted clause is flagged for agent review and cannot be silently inserted.
-- [ ] `T-017`: Privacy guard test — verify that client identity documents and sensitive PII are blocked from external AI model queries.
+</details>

@@ -1,7 +1,7 @@
 ---
 template:
   title: BROKO Task Card
-  description: Template for creating engineering tasks linked to requirements and QA cases.
+  description: Template for creating clear tasks understandable by domain experts and developers alike.
   tags:
     - task
     - retracct
@@ -26,25 +26,53 @@ tags:
 
 ---
 
-## 1. Description & User Story
-As an agent using BROKO, I want to... so that...
+## 1. What This Feature Does (In Plain English)
+
+[Explain in simple, everyday language what this feature is, what real-world problem it solves, and why it is important for the brokerage or client.]
 
 ---
 
-## 2. Acceptance Criteria
-- [ ] 
-- [ ] 
-- [ ] 
+## 2. What the User Sees & Does on Screen (Step-by-Step)
+
+1. **Step 1:** The user clicks...
+2. **Step 2:** The screen asks for...
+3. **Step 3:** The user enters...
+4. **Step 4:** The system displays...
 
 ---
 
-## 3. Implementation Plan
-1. 
-2. 
+## 3. Real Estate & Legal Rules (Plain English)
+
+* **Rule 1:** [E.g., What RECO / TRESA law requires]
+* **Rule 2:** [E.g., Privacy or math rule]
+* **Rule 3:** [E.g., What is forbidden or gated]
 
 ---
 
-## 4. Verification Evidence
-- [ ] Unit/Integration tests passing
-- [ ] Manual walkthrough verified
-- [ ] Associated QA test case satisfied
+## 4. How Anyone Can Test It (Without Technical Knowledge)
+
+- [ ] [Simple action 1 to test in the UI]
+- [ ] [Simple action 2 to check]
+- [ ] [What you expect to see on screen]
+
+---
+
+## 5. Technical Blueprint for Developers (Code, APIs & Database)
+
+<details>
+<summary><b>Click to expand developer specifications (Schemas, APIs & Checklists)</b></summary>
+
+### TypeScript Data Schema
+```typescript
+// Developer data contract
+```
+
+### Endpoints to Implement
+* `POST /api/v1/...` — Describe route and HTTP status.
+
+### Developer Checklist
+- [ ] Database table migration.
+- [ ] Business logic service implementation.
+- [ ] Unit & integration tests passing.
+
+</details>

@@ -7,7 +7,7 @@ priority: P0
 sprint: sprint-1-poc
 assignee: "Eng Team"
 requirement: "[[retracct/05-matrices/requirements-matrix|TM-003, TM-005, TM-010, TM-012, TM-013]]"
-qa_case: "[[retracct/05-matrices/qa-cases|T-003, T-007, T-008]]"
+qa_case: "[[retracct/05-matrices/qa-cases|T-003, T-005, T-007, T-008]]"
 tags:
   - task
   - drafting
@@ -24,118 +24,103 @@ tags:
 
 ---
 
-## 1. Technical Objective & User Context
+## 1. What This Feature Does (In Plain English)
 
-### Technical Objective (What Developers Build)
-Build the guided authoring engine for the Ontario Agreement of Purchase and Sale (OREA Form 100), financial reconciliation calculator (`Price = Deposit + Balance`), Schedule A condition compiler, Land Registry business-day date calculators, and counteroffer versioning session tracking with strike-outs and Confirmation of Acceptance (COA).
+This is the heart of the platform: creating the official Ontario legal offer to purchase a residential home (**OREA Form 100 — Agreement of Purchase and Sale**).
 
-### End-User Persona
-* **Primary User:** Licensed Real Estate Agent (Buyer Representative)
-* **Counterparty User:** Listing Agent (receiving and countering offers)
-
-### Business Rationale & Domain Context
-OREA Form 100 is the core legal contract for Ontario residential sales. Under RECO regulations, counteroffers must preserve document continuity across negotiation rounds, tracking sequential price strike-outs, initials, and flips of irrevocability until the final accepting party executes the Confirmation of Acceptance (COA).
+It lets the agent easily fill in all the key terms of the deal without making costly calculation mistakes:
+1. **Property & Price:** Enters the house address, offered price, and initial deposit. The system automatically calculates the remaining balance due on closing day.
+2. **Important Dates:** Sets when the offer expires (irrevocable deadline), when the lawyer checks the title (requisition date), and when the buyer gets the keys (closing date).
+3. **What Stays with the House:** Checks off what chattels are included (e.g., stainless steel fridge, stove, washer/dryer) and what items the seller is taking.
+4. **Schedule A Conditions:** Easily inserts standard Ontario protection clauses (e.g. 5 days to get mortgage financing approved, or 5 days for a home inspection).
+5. **Counter-Offers:** When the seller counters back (e.g. asking for $50,000 more), the system tracks the negotiation by showing the old price crossed out with initials on the same document, keeping a clean legal paper trail until the **Confirmation of Acceptance** is signed.
 
 ---
 
-## 2. Technical Data Contract & Schema
+## 2. What the User Sees & Does on Screen (Step-by-Step)
 
+1. **Start Offer:** The agent clicks **"Draft Form 100 Offer"**.
+2. **Step 1 — Price & Deposit:**
+   * Agent types the purchase price (e.g. `$1,200,000`).
+   * Agent enters the initial deposit (e.g. `$50,000`) and chooses "Payable Upon Acceptance" (within 24 hours).
+   * The screen immediately updates: *"Balance Due on Closing: $1,150,000"*.
+3. **Step 2 — Dates & Expiry:**
+   * Agent sets the offer expiry time (e.g. 11:59 PM tomorrow).
+   * Agent picks the closing date (e.g. December 15). The system automatically warns if the chosen date falls on a weekend or Ontario statutory holiday.
+   * The title search date is automatically suggested (typically 14 to 30 days before closing).
+4. **Step 3 — Schedule A Conditions:**
+   * The agent clicks "+ Add Condition" and selects **"Mortgage Financing"**.
+   * A clean box asks: *"How many business days?"* (Default: 5). *"Maximum interest rate?"* (e.g. 4.2%).
+   * The legal clause is generated instantly with the numbers filled in.
+   * Agent clicks "+ Add Condition" and adds **"Home Inspection"** (5 business days).
+5. **Review & Preview:** The agent clicks **"Preview Form 100"** to see the completed, ready-to-sign PDF.
+
+---
+
+## 3. Real Estate & Legal Rules (Plain English)
+
+* **The Math Must Add Up:** Purchase Price must exactly equal Deposit + Balance on Closing. The system will not let the agent continue if the numbers don't match.
+* **No Holiday Closings:** Land registry offices in Ontario are closed on weekends and statutory holidays (like Thanksgiving or Family Day). Closing dates must be valid business days.
+* **Single-Session Counter-Offers:** When a counter-offer is received, never create a brand-new blank contract. Show the previous price struck through with initials on the existing document chain (Ontario RECO best practice).
+* **Confirmation of Acceptance (COA):** The deal is only locked once the last party to accept signs the COA box on Page 5 of Form 100.
+
+---
+
+## 4. How Anyone Can Test It (Without Technical Knowledge)
+
+- [ ] Start a new Form 100 offer, enter `$1,000,000` price and `$50,000` deposit. Verify the closing balance displays `$950,000`.
+- [ ] Try picking Sunday as a closing date and verify the system prompts you to choose a business day instead.
+- [ ] Add a Mortgage Financing condition for 5 days at 4% rate and check the preview to confirm the clause text is filled out without any blank blanks (`[ ]`).
+- [ ] Simulate a counteroffer: change price to `$1,050,000` and confirm the preview displays `$1,000,000` crossed out with an initial box next to it.
+
+---
+
+## 5. Technical Blueprint for Developers (Code, APIs & Database)
+
+<details>
+<summary><b>Click to expand developer specifications (Schemas, APIs & Checklists)</b></summary>
+
+### TypeScript Data Schema
 ```typescript
 export interface Form100OfferPayload {
   transactionId: string;
   offerVersionId: string; // e.g. "OFF-001-v1"
-  buyerNames: string[];
-  sellerNames: string[];
-  propertyDetails: {
-    address: string;
-    frontageFeet?: number;
-    depthFeet?: number;
-    legalDescription: string;
-  };
   financialTerms: {
-    purchasePrice: number; // e.g. 1,250,000.00
-    depositAmount: number; // e.g. 50,000.00
+    purchasePrice: number;
+    depositAmount: number;
     depositPayableMethod: "HEREWITH" | "UPON_ACCEPTANCE" | "AS_OTHERWISE_DESCRIBED";
-    additionalDepositAmount?: number;
-    balanceOfPurchasePrice: number; // purchasePrice - totalDeposits
+    balanceOfPurchasePrice: number; // purchasePrice - depositAmount
   };
   scheduleTerms: {
-    irrevocableDeadline: string; // ISO 8601 with America/Toronto TZ (e.g. 2026-10-25T23:59:00-04:00)
-    completionDate: string;      // Closing Date (YYYY-MM-DD, must be a Land Registry business day)
-    requisitionDate: string;     // Title Search deadline (YYYY-MM-DD, typically 14-30 days before closing)
-    chattelsIncluded: string[];  // e.g. ["Stainless Steel Fridge", "Gas Stove", "Washer/Dryer"]
-    fixturesExcluded: string[];  // e.g. ["Dining Room Chandelier"]
-    rentalItems: string[];       // e.g. ["Hot Water Tank (Reliance $34.99/mo)"]
+    irrevocableDeadline: string; // ISO 8601 America/Toronto
+    completionDate: string;      // YYYY-MM-DD
+    requisitionDate: string;     // YYYY-MM-DD
+    chattelsIncluded: string[];
+    fixturesExcluded: string[];
   };
   scheduleAConditions: Array<{
     conditionId: string;
-    clauseType: "MORTGAGE" | "INSPECTION" | "LAWYER_REVIEW" | "PROPERTY_ACCESS" | "INSURANCE" | "CUSTOM";
-    sourceLibrary: "OFFICE" | "PERSONAL" | "STANDARD_OREA";
+    clauseType: "MORTGAGE" | "INSPECTION" | "LAWYER_REVIEW" | "PROPERTY_ACCESS";
     rawClauseText: string;
     parameters: {
       durationBusinessDays?: number;
-      interestRateCapPercent?: number; // e.g. 4.25
+      interestRateCapPercent?: number;
       principalAmount?: number;
-      amortizationYears?: number;
-      numberOfAccessVisits?: number;
-      accessDurationHours?: number;
     };
-    fulfillmentParty: "BUYER" | "SELLER";
-    benefitingParty: "BUYER" | "SELLER" | "MUTUAL";
-    irrevocableExpiry: string; // Computed ISO timestamp
+    irrevocableExpiry: string;
   }>;
 }
 ```
 
----
+### Endpoints to Implement
+* `POST /api/v1/offers` — Saves offer terms and validates financial balance equation.
+* `POST /api/v1/offers/{id}/counter` — Creates new version (`v2`) on the same offer entity with strike-outs and flipped irrevocability.
+* `POST /api/v1/offers/{id}/accept-coa` — Records Confirmation of Acceptance timestamp.
 
-## 3. Core Acceptance Criteria
+### Developer Checklist
+- [ ] Validate `purchasePrice === depositAmount + balanceOfPurchasePrice` (return HTTP 422 on mismatch).
+- [ ] Integrate Ontario holiday calendar to reject weekend/holiday `completionDate`.
+- [ ] Implement PDF stamping of strike-outs and initial boxes on counter-offer rounds.
+- [ ] Automated tests passing for QA cases `T-003`, `T-005`, `T-007`, and `T-008`.
 
-- [ ] **Form 100 Guided Builder:**
-  - Validates that `purchasePrice = depositAmount + additionalDepositAmount + balanceOfPurchasePrice`.
-  - Rejects offers where `irrevocableDeadline` is set in the past.
-  - Automatically calculates default `requisitionDate` (Title Search) as 14 to 30 days prior to `completionDate`.
-  - Enforces that `completionDate` does not fall on an Ontario statutory holiday or weekend.
-- [ ] **Schedule A Clause Compilation:**
-  - Provides instant insertion of standard OREA booklet conditions:
-    1. *Mortgage Financing:* Populates loan principal, interest cap (e.g. 4.0% per annum), amortization, and 5 business-day waiver window.
-    2. *Property Inspection:* Qualified home inspector clause with repair-cost threshold and 5 business-day window.
-    3. *Lawyer Review:* Condition for buyer's lawyer to review agreement within 3–5 business days.
-    4. *Property Access:* Pre-closing buyer access (e.g., 2 visits of 1-hour duration prior to closing).
-    5. *Insurance:* Satisfactory property insurance condition.
-- [ ] **Library Segmentation (`Q13`):**
-  - Distinguishes between **Office Clauses** (brokerage approved) and **Personal Clauses** (agent saved).
-- [ ] **Clause Conflict & Variable Checking:**
-  - Prevents drafting with unpopulated template variables (e.g. `[insert interest rate]` or `[insert days]`).
-  - Warns if multiple contradictory financing conditions are selected.
-- [ ] **Warn-Only Form Control (`Q12`, `TM-006`):**
-  - If OREA Form 100 version timestamp is unverified, displays non-blocking warning banner: *"Using unverified OREA Form 100 version. Consult Broker of Record prior to firm commitment."*
-- [ ] **Audit Trail Events:**
-  - `OFFER_DRAFT_CREATED`
-  - `SCHEDULE_A_COMPILED`
-  - `OFFER_TERMS_VALIDATED`
-
----
-
-## 4. Implementation Steps
-
-1. **Offer Service Engine:**
-   - Create `OfferDraftingService` with methods `createDraft()`, `calculateFinancialBalance()`, `addScheduleAClause()`.
-   - Implement date calculation engine for Ontario Land Registry business days.
-2. **Standard Clause Booklet Ingestion:**
-   - Seed baseline database with the 10 standard OREA conditions and typed variable schemas.
-3. **Drafting UI Component:**
-   - Step 1: Parties and Legal Property Description.
-   - Step 2: Price and Deposit Schedule (dynamic balance recalculator).
-   - Step 3: Important Dates (Irrevocable, Title Search, Closing Date).
-   - Step 4: Schedule A Builder with Clause Selector (Office vs Personal tabs) and variable inputs.
-4. **Validation Pipeline:**
-   - Ensure all inputs pass strict schema verification before enabling "Proceed to E-Signature" action.
-
----
-
-## 5. Verification & QA Test Links
-
-- [ ] `T-003`: Verify drafting can proceed with persistent warning when form version is unverified.
-- [ ] `T-007`: Verify AI clause suggestions are flagged for human review before adding to Schedule A.
-- [ ] `T-008`: Verify countdown calculation correctly skips Ontario statutory holidays and weekends.
+</details>

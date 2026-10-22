@@ -22,21 +22,56 @@ tags:
 
 ---
 
-## 1. Technical Objective & User Context
+## 1. What This Feature Does (In Plain English)
 
-### Technical Objective (What Developers Build)
-Build the transaction initialization service and REST API endpoint (`POST /api/v1/transactions`) to register residential buyer transactions, store legal party profiles, and enforce Row-Level Security (RLS) database firewalls between buyer and seller workspaces.
+When a real estate agent takes on a new home buyer, they need a dedicated, private file in the system to manage the deal.
 
-### End-User Persona
-* **Primary User:** Licensed Ontario Real Estate Agent (Buyer's Realtor)
-* **Supervisory User:** Broker of Record (BOR) / Compliance Administrator
-
-### Business Rationale & Domain Context
-Under Ontario's Trust in Real Estate Services Act (TRESA), real estate brokerages representing buyers must establish client representation models and legal party identities upfront. In-house transactions where the same brokerage represents both parties require cryptographic workspace isolation to prevent confidentiality breaches (`T-004`).
+This task creates the **Buyer Onboarding** flow. It allows the agent to:
+1. Enter the buyer's full legal details (name, email, phone, home address).
+2. Add spouses or co-buyers who are buying the property together.
+3. Set the property type to **Freehold House (Resale)**.
+4. Ensure total privacy: if another agent in the same brokerage is representing the seller, that seller's agent cannot peek into this buyer's private notes or offer amounts.
 
 ---
 
-## 2. Technical Data Contract & Schema
+## 2. What the User Sees & Does on Screen (Step-by-Step)
+
+1. **Click New Deal:** The agent clicks **"+ New Transaction"** on their dashboard and selects **"Buyer"**.
+2. **Select Property Type:** The agent chooses **"Residential Freehold Resale"** (standard standalone house or townhouse).
+3. **Enter Buyer Details:**
+   * Enters the primary buyer's legal full name (must match their driver's license or passport).
+   * Enters their email, phone number, and current home address.
+   * If there is a second buyer (like a spouse or business partner), the agent clicks **"+ Add Another Buyer"** and fills in their info.
+4. **Choose Representation Model:**
+   * Selects **"Designated Representation"** (the agent specifically represents the buyer) or **"Self-Represented Party"** (the buyer is buying on their own without agent representation).
+5. **Create Buyer Workspace:** The agent clicks **"Create Transaction"**. The system creates a new deal file and opens the buyer's dashboard.
+
+---
+
+## 3. Real Estate & Legal Rules (Plain English)
+
+* **Legal Names Only:** Nicknames (like "Bob" instead of "Robert") are not allowed because Ontario legal purchase contracts require legal names matching government photo ID.
+* **Complete Contact Info:** Every buyer must have a valid email, phone number, and Ontario residential address.
+* **In-House Privacy Wall (TRESA Rule):** If Agent A represents the buyer and Agent B in the same brokerage represents the seller, Agent B must be blocked from seeing Agent A's buyer file.
+
+---
+
+## 4. How Anyone Can Test It (Without Technical Knowledge)
+
+- [ ] Click "+ New Transaction", choose "Buyer", and select "Freehold Resale".
+- [ ] Enter a buyer's legal name, phone, email, and Toronto address.
+- [ ] Click "+ Add Another Buyer" and add a spouse.
+- [ ] Click "Create Transaction" and confirm the deal file opens with both buyers displayed.
+- [ ] Check privacy: log into a colleague's account in the same brokerage and verify they cannot see this buyer file.
+
+---
+
+## 5. Technical Blueprint for Developers (Code, APIs & Database)
+
+<details>
+<summary>&lt;b&gt;Click to expand developer specifications (Schemas, APIs &amp; Checklists)&lt;/b&gt;</summary>
+
+### **TypeScript Data Schema**
 
 ```typescript
 export interface BuyerOnboardingPayload {
@@ -59,53 +94,20 @@ export interface BuyerOnboardingPayload {
     };
     fintracVerified: boolean;
   }>;
-  targetProperty?: {
-    streetAddress: string;
-    municipality: string;
-    postalCode: string;
-    mlsNumber?: string;
-    legalDescription?: string;
-  };
 }
 ```
 
----
+### **Endpoints to Implement**
 
-## 3. Core Acceptance Criteria
+* **`POST /api/v1/transactions` — Creates transaction entity in `ONBOARDING` state (Status: `201 Created`).**
+* **`POST /api/v1/transactions/{id}/parties` — Adds co-buyers to an existing transaction.**
 
-- [ ] **Transaction Initialization:** Creates a transaction entity in `ONBOARDING` state with an immutable UUID, brokerage ID, and timestamp.
-- [ ] **Property Classification:** Sets property class to `Residential Freehold Resale` (`B01`), locking in OREA Form 100 as the required offer template.
-- [ ] **Party Hierarchy:** Supports multiple buyers (primary buyer, spouses, co-signers) with full legal names matching government-issued ID.
-- [ ] **Confidentiality Firewalling (`Q04`):**
-  - Isolates buyer workspace permissions from any potential in-house listing or counterparty agent.
-  - Generates independent cryptographic tenant keys preventing cross-party document leakage (`T-004`).
-- [ ] **Event Emission:** Appends immutable audit events to the transaction log:
-  - `TRANSACTION_CREATED` (payload: metadata, timestamp, creatorId)
-  - `PARTY_REGISTERED` (payload: partyId, role, legalFullName)
-- [ ] **Validation Guardrails:**
-  - Reject transactions missing valid Ontario postal codes or contact emails.
-  - Require explicit selection of representation model before progressing to offer drafting.
+### **Developer Checklist**
 
----
+- [ ] **Create PostgreSQL `transactions` and `parties` tables using Prisma.**
+- [ ] **Add Row-Level Security (RLS) middleware scoped by `brokerageId` and `agentId`.**
+- [ ] **Validate Ontario postal code format with Zod regex (`/^[A-Z]\d[A-Z] \d[A-Z]\d$/i`).**
+- [ ] **Emit `TRANSACTION_CREATED` audit event to append-only log.**
+- [ ] **Automated tests passing for QA cases `T-001` and `T-004`.**
 
-## 4. Implementation Steps
-
-1. **Database / Entity Layer:**
-   - Define PostgreSQL table schemas for `transactions`, `parties`, and `agent_client_relationships`.
-   - Add foreign key constraints and row-level security (RLS) policies scoped by `brokerageId` and `agentId`.
-2. **API Endpoint (`POST /api/v1/transactions`):**
-   - Implement controller and validation pipe with Zod/Joi schema.
-   - Return HTTP 201 with populated `transactionId` and initial state `ONBOARDING`.
-3. **Event Stream Integration:**
-   - Publish `TRANSACTION_CREATED` event to transactional audit log.
-4. **Front-End Guided Onboarding Flow:**
-   - Step 1: Client details (Name, Email, Phone, Address).
-   - Step 2: Property type selection (Default: Freehold Resale).
-   - Step 3: Representation choice (Designated vs Brokerage vs Self-Represented).
-
----
-
-## 5. Verification & QA Test Links
-
-- [ ] `T-001`: Verify transaction creation and party provenance.
-- [ ] `T-004`: Dual-representation firewall test — verify in-house listing agent cannot read buyer notes or drafted terms.
+</details>
