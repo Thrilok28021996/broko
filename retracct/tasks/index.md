@@ -21,6 +21,7 @@ Welcome to the task management hub for BROKO. This board tracks delivery milesto
 ## Active Milestone: Sprint 1 — Buyer Freehold POC (`B01`)
 
 > **Objective:** Deliver an end-to-end working engineering POC for the **Buyer Freehold Resale scenario (`B01`)**, supporting both native drafting (with AI clause assistant) and external signed agreement import, condition fulfillment countdowns, and immutable TCS package export.  
+> **Engineering Blueprint:** [[retracct/DEVELOPER-GUIDE|Developer Implementation Guide & Architecture Handbook]]  
 > **Target PRD Requirements:** [[retracct/05-matrices/requirements-matrix|TM-001, TM-002, TM-003, TM-004, TM-005, TM-007, TM-008, TM-009, TM-010, TM-012, TM-013, TM-015, TM-017, TM-019, TM-020, TM-022]]  
 > **Target Exit Gates:** [[retracct/04-qa-release/poc-release-plan|POC Acceptance Criteria]]
 

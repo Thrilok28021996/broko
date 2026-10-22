@@ -43,6 +43,7 @@ BROKO is a transaction and offer management platform engineered specifically for
 ### [[retracct/lifecycle|00. Software & Knowledge Lifecycle]]
 End-to-end framework connecting discovery, meetings, specifications, sprint delivery, and release gates:
 - [[retracct/lifecycle|Software Lifecycle Flowchart & Stage Gates]]
+- [[retracct/DEVELOPER-GUIDE|Developer Implementation Guide & Architecture Handbook]]
 - [[retracct/meetings/index|Meetings & Discovery Ingestion Hub]] (*with built-in meeting template*)
 - [[retracct/tasks/index|Task Management & Sprint Board]] (*Sprint 1 POC tracking*)
 
