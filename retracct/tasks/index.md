@@ -66,4 +66,4 @@ You can instruct Antigravity directly in chat:
 * **Via Agent:** Instruct the agent to create a new task linked to any requirement in [[retracct/05-matrices/requirements-matrix]].
 
 ### 3. Route Tasks from Meetings
-When reviewing meeting transcripts in [[retracct/meetings/index|Meetings Hub]] (e.g. [[retracct/meetings/2026-10-15-ai-bots-module|2026-10-15 AI Bots Module]]), promote any recorded action item into a task here.
+When reviewing meeting transcripts in [[meetings/index|Meetings Hub]] (e.g. [[meetings/2026-10-15-ai-bots-module|2026-10-15 AI Bots Module]]), promote any recorded action item into a task here.

@@ -20,7 +20,7 @@ tags:
 # TASK-005: External Signed PDF Upload & Reconstruction
 
 > **Status:** `todo` | **Priority:** `P0` | **Sprint:** `sprint-1-poc`  
-> **Traceability:** Requirements `TM-004`, `TM-007` | Decisions `Q05`, `Q07`, `Q27` | QA Cases `T-001` | Meetings [[retracct/meetings/2026-10-12-counter-offers-email-ingestion|2026-10-12 Counter-Offers Discovery]]
+> **Traceability:** Requirements `TM-004`, `TM-007` | Decisions `Q05`, `Q07`, `Q27` | QA Cases `T-001` | Meetings [[meetings/2026-10-12-counter-offers-email-ingestion|2026-10-12 Counter-Offers Discovery]]
 
 ---
 

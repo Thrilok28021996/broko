@@ -20,7 +20,7 @@ tags:
 # TASK-007: Condition Waiver / Fulfillment & Countdown
 
 > **Status:** `todo` | **Priority:** `P0` | **Sprint:** `sprint-1-poc`  
-> **Traceability:** Requirements `TM-013` | Decisions `Q18`, `Q19` | QA Cases `T-008` | Meetings [[retracct/meetings/2026-10-15-ai-bots-module|2026-10-15 AI Bots Module]]
+> **Traceability:** Requirements `TM-013` | Decisions `Q18`, `Q19` | QA Cases `T-008` | Meetings [[meetings/2026-10-15-ai-bots-module|2026-10-15 AI Bots Module]]
 
 ---
 

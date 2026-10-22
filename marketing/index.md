@@ -60,6 +60,8 @@ Establish Broko as the **#1 AI real estate brand in Ontario within 6 months** th
 
 ## 3. Module Tasks & Delivery Backlog
 
+All active sprint tickets are managed on the **[[marketing/tasks/index|M01 Marketing Task Board]]**:
+
 | Ticket ID | Task Name | Owner | Sprint | Priority | Status | Dependencies |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`BRK-M01-001`** | **SEO & Content Strategy:** Keyword research, on-page SEO, neighbourhood guides, Broko Pulse, programmatic pages | Ma10 Megha | S1 | 🔴 Critical | Ready | M04.1 (Website stable) |

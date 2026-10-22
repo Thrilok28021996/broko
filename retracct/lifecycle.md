@@ -21,7 +21,7 @@ This document defines the end-to-end lifecycle connecting discovery meetings, le
 
 ```mermaid
 flowchart TD
-    M[Discovery & Meetings<br/><i>retracct/meetings/</i>] --> S[Synthesis & RFCs<br/><i>retracct/rfcs/ & Open Decisions</i>]
+    M[Discovery & Meetings<br/><i>meetings/</i>] --> S[Synthesis & RFCs<br/><i>retracct/rfcs/ & Open Decisions</i>]
     S --> SPEC[Formal Specifications<br/><i>01-prd/, 02-workflows/, 03-compliance/</i>]
     SPEC --> IMPL[Sprint Implementation<br/><i>Engineering POC / Components</i>]
     IMPL --> QA[QA & Verification<br/><i>04-qa-release/ & QA Cases</i>]
@@ -35,7 +35,7 @@ flowchart TD
 ## 2. The 5 Lifecycle Stages
 
 ### Stage 1: Discovery & Meeting Ingestion
-* **Location:** [`retracct/meetings/`](file:///Users/thrilok/Documents/OpenKnowledge/Broko/retracct/meetings)
+* **Location:** [`meetings/`](file:///Users/thrilok/Documents/OpenKnowledge/Broko/meetings)
 * **Purpose:** Ingest stakeholder interviews (Broker of Record, real estate agents, conveyancers), legal reviews (OREA / RECO counsel), and team standups.
 * **OpenKnowledge Integration:** Uses the built-in `meeting-note` template (`New Document from Template`).
 * **Output:** Documented notes with owners, tagged action items, and wikilinks to impacted matrices or requirements.

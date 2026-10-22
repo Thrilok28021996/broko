@@ -20,7 +20,7 @@ tags:
 # TASK-009: AI Clause Assistant & Intelligent Parameterization Engine
 
 > **Status:** `todo` | **Priority:** `P1` | **Sprint:** `sprint-1-poc`  
-> **Traceability:** Requirements `TM-011`, `TM-012`, `TM-020` | Decisions `Q09`, `Q13`, `Q14`, `Q26` | QA Cases `T-005`, `T-007`, `T-017` | Meetings [[retracct/meetings/2026-10-15-ai-bots-module|2026-10-15 AI Bots Module]], [[retracct/meetings/2026-10-12-counter-offers-email-ingestion|2026-10-12 Counter-Offers Discovery]]
+> **Traceability:** Requirements `TM-011`, `TM-012`, `TM-020` | Decisions `Q09`, `Q13`, `Q14`, `Q26` | QA Cases `T-005`, `T-007`, `T-017` | Meetings [[meetings/2026-10-15-ai-bots-module|2026-10-15 AI Bots Module]], [[meetings/2026-10-12-counter-offers-email-ingestion|2026-10-12 Counter-Offers Discovery]]
 
 ---
 
