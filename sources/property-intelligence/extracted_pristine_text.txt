@@ -1,0 +1,105 @@
+BROKO APP
+Property Snap Feature
+Preliminary Product Requirements — Final Draft for Team Discussion
+v0.4  ·  For internal team discussion — not final ·  Prepared September 2026
+How to use this document: this is a business-level requirements draft, written for the whole team (not only engineers) to react to. It captures what we've decided so far and, just as importantly, what's still open. A separate technical specification will follow once these decisions are confirmed. Please mark up anything you'd change — nothing here is final.
+1. Overview
+Property Snap lets a user point their phone at any house, townhouse, or condo and instantly get Broko's Estimate (Bestimate — our automated value estimate) and key property details — no typing an address, no searching.
+Current thinking on where it lives in the app (see Section 11 for the open UI discussion): a camera button sits directly on the main app — not nested behind opening a chat first — and behaves like an entry point into our existing estimate/sell-page experience. Once a photo is taken, the result and any follow-up questions are presented in our existing in-app chatbot's conversational format (with a close/“X” control), reusing that UI rather than inventing a new one. This is separate from, but sits alongside, a more general chatbot icon planned elsewhere in the app (e.g. top right) as a broader assistant. All of this is preliminary and open to change — see Section 11.
+2. Why We're Building This
+The primary purpose of this feature is to create buzz — a genuinely shareable, talked-about moment that draws people to try Broko and, in doing so, discover and start using our chatbot. It is a marketing and top-of-funnel play first, and an accuracy showcase second. Beyond the novelty, it serves three real business purposes: it's a low-friction hook that introduces people to Bestimate and our chatbot through curiosity rather than active buying/selling intent; every snap is a potential data point that helps improve our property-matching and estimate models over time; and it reinforces Broko's positioning as the tech-forward brokerage in the GTA market.
+One thing worth being clear-eyed about internally: someone casually snapping a house on a walk is not the same as someone with active buy/sell intent. This feature will likely drive engagement, brand recall, and chatbot adoption more directly than it drives immediate leads — all of those are valuable, but we should measure and talk about them separately rather than assuming every snap is a lead.
+3. Benefits
+For the user
+An instant answer to “what's this place worth?” with zero typing — just point and shoot.
+Works even without perfect information — the app degrades gracefully to nearby comparables and a quick Q&A rather than simply failing.
+Clear signal when the app isn't confident, instead of a confidently wrong answer.
+For the business
+A shareable, novel feature that's easy to talk about and demo — strong word-of-mouth / social potential.
+A natural, low-pressure bridge from curiosity into Broko's estimate and, eventually, agent-led conversations.
+Ongoing data collected from real-world snaps that can improve matching accuracy over time.
+4. Risks & How We're Managing Them
+The main risk with any “photo-to-value” feature is confidently showing the wrong answer — in real estate, people fact-check their own address immediately, so trust is fragile. The table below summarizes the main risks discussed and how the current design addresses them.
+Risk
+Why it matters
+How we're addressing it
+Wrong property identified
+Showing a neighbour's value as the user's own would damage trust immediately.
+Confidence shown as High/Medium/Low; when several properties look alike, the user is shown the options to pick from. If confidence is still low, the app asks 1–2 targeted questions to narrow it further before showing results.
+No GPS / poor photo conditions
+Many phones don't share precise location, and street photos are often affected by weather, night, or obstructions.
+The app reads visible address clues from the photo itself as a fallback, and tells the user plainly when a photo can't be used (rain, night, blocked view) instead of forcing a bad match.
+Real estate data compliance
+Our MLS board data-sharing agreement restricts how sold prices and comparables can be shown to the public.
+Sold prices, comparables, and the final estimate are shown only after phone number (OTP) verification, in line with VOW requirements. An early teaser may be shown pre-verification; property identification itself stays open to everyone.
+Property not in our coverage / database
+A buzz-driven consumer feature will get shared and tried well outside our data coverage (initially GTA and nearby areas only) and could feel “broken.”
+A clear “not found” path asks 1–2 quick questions and generates an estimate from nearby comparables; outside the coverage area or on a non-residential building, the app says so plainly instead of guessing.
+Misuse / cost at scale
+Each snap involves real processing cost; automated or bulk use could run up cost or scrape our data.
+Unverified users are rate-limited per IP (e.g. ~5 attempts); verified users get a higher allowance. Unusual usage patterns — including from verified users — are flagged for backend review. Full mechanism still to be designed (see Section 10).
+5. High-Level Workflow
+At a glance, here is the overall shape of the experience:
+6. Detailed Flow
+6.1 When the user shares their location
+The app uses the phone's coordinates to narrow the search to a small cluster of nearby properties, then visually compares the photo against that cluster. Matching is calibration-driven: rather than a single one-shot guess, the app shows its best candidate(s) with a confidence level, and if it isn't confident, asks the minimum number of targeted questions (typically 1–2) needed to narrow further — repeating only until it's confident or a small cap is reached, then presenting the top options either way.
+Property found as…
+What the user sees
+Active listing
+Live Bestimate and full property details — open to everyone, no sign-in needed.
+Sold
+The sold record and comparable properties — requires phone number (OTP) verification first; an early teaser may be shown before that.
+Not in our database
+The app asks 1–2 quick questions (bedrooms, bathrooms, property type) and generates an estimate from nearby comparables — OTP verification required to see the estimate.
+6.2 When location isn't available (camera is always required)
+The app first tries to read the address directly from the photo (a visible house number or street sign). If it can read a number, it confirms that with the user rather than assuming it's correct. If only a street name is visible, it narrows the search to that street. If nothing is legible, it falls back to a pure visual comparison. From here, the same three outcomes above apply (active / sold / not found).
+6.3 Condos & townhouses
+Condo buildings are often visible from much farther away than a house, and several similar towers can appear in one photo, so this flow has one extra step: the app first identifies which building it's looking at, showing the user an on-screen box around it so they can confirm (or pick a different one, if the wrong building was boxed). If two or more buildings genuinely look alike, the app shows all of them as options rather than guessing one. Once the building is confirmed, we want to identify the exact unit where possible — including which floor — and will pursue that; where the data or the photo doesn't support that precision, results fall back to a browsable list grouped by bedroom count (and floor, where we have that data). If the building isn't residential (e.g. a commercial or mixed-use building), or simply has no sellable units on record, the app says so plainly rather than showing “no data.”
+The same on-screen confirmation box is not just a condo behaviour — it can appear for a freehold house too whenever more than one house is visible in frame, so the user can confirm which one they mean.
+7. How Photos Are Handled
+Camera capture only — no photo library upload for customers, in this version.
+The app checks image quality before processing: rain, darkness, snow, or a heavy obstruction (e.g. a parked car) will prompt the user to retake the photo, with a plain-language reason (“a car is blocking the view — please try a clearer angle”).
+Matching primarily uses the front of the property; a rear/backyard photo may be used as a secondary check where available. Interior photos are not used for matching.
+User photos are used only to identify and match the property — they are not published or displayed anywhere.
+8. Trust & Compliance
+Because Broko is a licensed brokerage, this feature needs to respect our real estate board's data rules, not just be technically clever. The current approach:
+Property identification (“we found this property”) is open to all users — no account needed.
+Sold prices, comparable properties, and the generated estimate are shown only after phone number (OTP) verification, in line with our board's VOW (Virtual Office Website) requirements for that tier of data. A prompt up front tells the user that full results need a quick verification. Unverified users may still see a teaser (e.g. that a match was found) without the VOW-restricted fields.
+Any data shown is clearly labelled by source (VOW vs. IDX) so it's obvious to the user — and to us — which display rules apply to it.
+Coverage is limited to the GTA and nearby areas at launch; outside that area, the app says the feature isn't available there yet rather than guessing.
+Every estimate carries a clear disclaimer that it is not a formal appraisal.
+This section reflects the general structure of VOW-tier data rules. The exact line between what can be shown openly versus what requires verification — and specifically whether the estimate number itself is VOW-restricted or just the sold comps behind it — should be confirmed against our specific board data-feed agreement before this ships. Flagging this as a required sign-off, not a legal conclusion.
+9. Out of Scope for Version 1
+To keep the first version focused, the following are deliberately excluded for now — worth the team explicitly agreeing these are v2+ rather than rediscovering them mid-build:
+Customer-facing photo upload from the gallery (an internal/testing-only upload tool is fine).
+AI-generated removal of obstructions (e.g. digitally erasing a parked car) — we prompt the user to retake instead.
+Using interior photos for matching.
+10. Open Questions — Business & Technical (Priority)
+These affect the underlying logic and compliance posture, so they matter more right now than how anything looks — please come prepared to decide, not just discuss:
+What is the precise data-tier line in our board agreement — which fields require VOW verification versus which can be shown publicly, and does that include the estimate number itself?
+What's our plan for misuse/abuse beyond the rate-limit numbers already set (bulk scanning, scripted requests), and when a usage pattern gets flagged, what actually happens to it — logged for review, throttled automatically, or account-restricted while under review?
+What is the maximum number of calibration questions we're comfortable asking before the app just shows best-effort results — every extra question is a chance for a casual, buzz-driven user to drop off, so this is a real product limit to set, not just an engineering detail.
+What's the concrete signal that tells us this feature achieved its buzz/marketing goal — snaps per day, shares, app reviews mentioning it, press pickup? Worth naming now so success is measurable in three months rather than judged on vibes.
+“Save” is fine to leave open for now and isn't blocking — noting for whenever we design accounts, it could mean (a) saving the user's time/effort versus a manual search (already true, no extra build), (b) letting the user bookmark a snapped property to revisit later, or (c) keeping a full history of everything they've snapped.
+11. Open for UI/UX Discussion (Not Yet Decided)
+These are look-and-feel and interaction questions. They matter, but they're deliberately lower priority than Section 10 right now — the technical and compliance logic needs to be locked down first. Flagging them here so nothing gets lost:
+The visual design of the chatbot-style result window itself — layout, the “reveal” of the estimate, how the close (“X”) control and overall frame match the rest of our in-app chat experience.
+How the calibration follow-up questions are presented — chat bubbles, cards, one at a time vs. several at once — and how candidate properties are shown when the user needs to pick between look-alikes.
+The look and interaction of the on-screen confirmation box over a detected house or building — tap to confirm, drag to adjust, how it behaves with multiple houses/buildings in frame.
+How the direct camera/estimate entry point visually relates to the separate, more general chatbot icon planned elsewhere in the app (e.g. top right) — these are related but distinct, and the difference needs to be obvious to a user, not just to us.
+Overall pacing and “wow” feel of the result reveal — this is the moment the whole feature is designed around, so it deserves its own dedicated design pass once the logic above is settled.
+12. Glossary
+Term
+What it means
+Bestimate / Estimate
+Broko's customer-facing automated property value estimate — same thing, same branding, kept consistent by this feature.
+EXIF data
+Hidden information saved inside a photo file, sometimes including GPS coordinates of where it was taken.
+Comparable / “comp”
+A similar, nearby property used as a reference point to estimate value.
+VOW
+Virtual Office Website — an MLS board framework that allows showing more complete data (like sold prices) only to registered, verified users.
+Confidence bucket
+A simple High / Medium / Low label showing how sure the app is about a property match, instead of a raw percentage.
+RECO / TRREB
+RECO regulates real estate professionals in Ontario; TRREB is our regional real estate board and MLS data source.
