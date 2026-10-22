@@ -28,12 +28,13 @@ tags:
 
 This is the heart of the platform: creating the official Ontario legal offer to purchase a residential home (**OREA Form 100 — Agreement of Purchase and Sale**).
 
-It lets the agent easily fill in all the key terms of the deal without making costly calculation mistakes:
-1. **Property & Price:** Enters the house address, offered price, and initial deposit. The system automatically calculates the remaining balance due on closing day.
-2. **Important Dates:** Sets when the offer expires (irrevocable deadline), when the lawyer checks the title (requisition date), and when the buyer gets the keys (closing date).
-3. **What Stays with the House:** Checks off what chattels are included (e.g., stainless steel fridge, stove, washer/dryer) and what items the seller is taking.
-4. **Schedule A Conditions:** Easily inserts standard Ontario protection clauses (e.g. 5 days to get mortgage financing approved, or 5 days for a home inspection).
-5. **Counter-Offers:** When the seller counters back (e.g. asking for $50,000 more), the system tracks the negotiation by showing the old price crossed out with initials on the same document, keeping a clean legal paper trail until the **Confirmation of Acceptance** is signed.
+It lets the agent easily fill in all the key terms of the deal without making costly calculation or omission mistakes:
+1. **Property & Legal Description:** Enters the complete municipal address, side of street, frontage and depth dimensions, and official legal description (Lot, Plan, PIN, Municipality) along with full legal names of Buyer(s) and Seller(s) to satisfy OREA Form 100 requisitions.
+2. **Price & Deposit Structure:** Enters the purchase price (in figures and legal words), the initial deposit, any supplementary/additional deposits (e.g. upon condition removal), the deposit payment timing ("Herewith", "Upon Acceptance" [within 24h], or "As otherwise described"), and the deposit holder (held in trust). The system automatically computes the remaining unadjusted balance of the purchase price due on completion (subject to closing adjustments).
+3. **Important Dates:** Sets when the offer expires (irrevocable deadline), when the lawyer checks the title (requisition date), and when the buyer gets the keys (closing date).
+4. **What Stays with the House:** Checks off what chattels are included (e.g., stainless steel fridge, stove, washer/dryer) and what items the seller is taking.
+5. **Schedule A Conditions:** Easily inserts standard Ontario protection clauses (e.g. 5 days to get mortgage financing approved, or 5 days for a home inspection).
+6. **Counter-Offers:** When the seller counters back (e.g. asking for $50,000 more), the system tracks the negotiation by showing the old price crossed out with initials on the same document, keeping a clean legal paper trail until the **Confirmation of Acceptance** is signed.
 
 ---
 
@@ -42,8 +43,9 @@ It lets the agent easily fill in all the key terms of the deal without making co
 1. **Start Offer:** The agent clicks **"Draft Form 100 Offer"**.
 2. **Step 1 — Price & Deposit:**
    * Agent types the purchase price (e.g. `$1,200,000`).
-   * Agent enters the initial deposit (e.g. `$50,000`) and chooses "Payable Upon Acceptance" (within 24 hours).
-   * The screen immediately updates: *"Balance Due on Closing: $1,150,000"*.
+   * Agent enters the initial deposit (e.g. `$50,000`), selects the deposit holder (e.g. Listing Brokerage in trust), and chooses "Payable Upon Acceptance" (within 24 hours).
+   * Agent can optionally add a supplementary deposit (e.g. `$25,000` upon waiver of conditions).
+   * The screen immediately updates: *"Unadjusted Balance Due on Closing: $1,125,000 (subject to closing adjustments)"*.
 3. **Step 2 — Dates & Expiry:**
    * Agent sets the offer expiry time (e.g. 11:59 PM tomorrow).
    * Agent picks the closing date (e.g. December 15). The system automatically warns if the chosen date falls on a weekend or Ontario statutory holiday.
@@ -68,8 +70,8 @@ It lets the agent easily fill in all the key terms of the deal without making co
 
 ## 4. How Anyone Can Test It (Without Technical Knowledge)
 
-- [ ] Start a new Form 100 offer, enter `$1,000,000` price and `$50,000` deposit. Verify the closing balance displays `$950,000`.
 - [ ] Try picking Sunday as a closing date and verify the system prompts you to choose a business day instead.
+- [ ] Start a new Form 100 offer, enter `$1,000,000` price and `$50,000` deposit. Verify the closing balance displays `$950,000`.
 - [ ] Add a Mortgage Financing condition for 5 days at 4% rate and check the preview to confirm the clause text is filled out without any blank blanks (`[ ]`).
 - [ ] Simulate a counteroffer: change price to `$1,050,000` and confirm the preview displays `$1,000,000` crossed out with an initial box next to it.
 
