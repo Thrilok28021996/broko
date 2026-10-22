@@ -24,9 +24,17 @@ tags:
 
 ---
 
-## 1. Description & User Story
+## 1. Technical Objective & User Context
 
-As an agent managing an accepted conditional transaction (`ACCEPTED_CONDITIONAL`), I want real-time countdown tracking for every Schedule A condition (financing, inspection, status certificate, lawyer approval) in the Ontario timezone, and structured workflows to record signed **Notices of Fulfillment (OREA Form 124)** or **Waivers (OREA Form 123)** before expiry, so that the transaction transitions cleanly to firm (`FIRM`) or terminates with proper legal releases (`MUTUAL_RELEASE`).
+### Technical Objective (What Developers Build)
+Build the condition countdown engine in the Ontario timezone (`America/Toronto`), accounting for statutory holidays and business days, resolution workflows for Notice of Fulfillment (OREA 124) and Waiver (OREA 123) uploads, automatic deal status progression to `FIRM`, and an `EXPIRED_UNRESOLVED` escalation state.
+
+### End-User Persona
+* **Primary User:** Licensed Real Estate Agent (Buyer Representative)
+* **Supervisory User:** Broker of Record (BOR)
+
+### Business Rationale & Domain Context
+In conditional real estate purchases, financing and inspection conditions must be satisfied or waived prior to precise irrevocable deadlines. Under PRD Decision `Q19`, if a condition deadline passes without resolution documents, the software must never unilaterally cancel the agreement; it must flag `EXPIRED_UNRESOLVED` and escalate to human stakeholders (`T-008`).
 
 ---
 

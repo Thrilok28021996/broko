@@ -23,9 +23,17 @@ tags:
 
 ---
 
-## 1. Description & User Story
+## 1. Technical Objective & User Context
 
-As an agent who received an executed agreement or counteroffer signed outside the platform (e.g. from the listing agent via external email or paper scan), I want to upload the signed PDF or forward it via email to a dedicated incoming address (`offers@broko.ai`), so that BROKO automatically parses and extracts key terms (price, parties, conditions, closing date) into an editable verification screen without forcing manual recreation.
+### Technical Objective (What Developers Build)
+Build an external executed document ingestion pipeline supporting both multipart PDF uploads (`POST /documents/import`) and an inbound email forwarding gateway (`offers@broko.ai`), OCR term extraction (price, parties, dates, conditions), and a split-pane human verification screen where confirmation is mandatory before deal firming.
+
+### End-User Persona
+* **Primary User:** Licensed Real Estate Agent (Realtor) receiving external contracts via email
+* **Supervisory User:** Brokerage Administrator / Compliance Reviewer
+
+### Business Rationale & Domain Context
+In real-world Ontario brokerage operations, over 60% of accepted deals or counteroffers originate outside the platform (e.g. sent from listing agents via email or competitor systems). As demonstrated in the SkySlope workflow, allowing agents to forward PDF attachments directly to an inbound gateway dramatically reduces data entry while strictly gating firm deal transitions behind human verification (`T-001`).
 
 ---
 

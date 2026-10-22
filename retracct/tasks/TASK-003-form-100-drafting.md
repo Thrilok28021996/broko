@@ -24,9 +24,17 @@ tags:
 
 ---
 
-## 1. Description & User Story
+## 1. Technical Objective & User Context
 
-As a buyer's agent, I want a guided authoring engine for the Ontario **Agreement of Purchase and Sale (OREA Form 100)** that handles core offer terms (purchase price, deposit breakdown, irrevocability, requisition/completion dates, chattels/fixtures) and dynamically compiles **Schedule A Conditions** (mortgage financing, inspection, lawyer review, property access) using standardized clause templates and parameter inputs.
+### Technical Objective (What Developers Build)
+Build the guided authoring engine for the Ontario Agreement of Purchase and Sale (OREA Form 100), financial reconciliation calculator (`Price = Deposit + Balance`), Schedule A condition compiler, Land Registry business-day date calculators, and counteroffer versioning session tracking with strike-outs and Confirmation of Acceptance (COA).
+
+### End-User Persona
+* **Primary User:** Licensed Real Estate Agent (Buyer Representative)
+* **Counterparty User:** Listing Agent (receiving and countering offers)
+
+### Business Rationale & Domain Context
+OREA Form 100 is the core legal contract for Ontario residential sales. Under RECO regulations, counteroffers must preserve document continuity across negotiation rounds, tracking sequential price strike-outs, initials, and flips of irrevocability until the final accepting party executes the Confirmation of Acceptance (COA).
 
 ---
 

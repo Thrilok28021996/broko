@@ -22,9 +22,17 @@ tags:
 
 ---
 
-## 1. Description & User Story
+## 1. Technical Objective & User Context
 
-As an Ontario real estate agent, I want to onboard a new residential buyer client into BROKO and classify their transaction context (role, property type, representation status, and co-buyers), so that the platform configures the proper legal forms, confidentiality walls, and statutory validation rules for **Buyer Freehold Resale (`B01`)**.
+### Technical Objective (What Developers Build)
+Build the transaction initialization service and REST API endpoint (`POST /api/v1/transactions`) to register residential buyer transactions, store legal party profiles, and enforce Row-Level Security (RLS) database firewalls between buyer and seller workspaces.
+
+### End-User Persona
+* **Primary User:** Licensed Ontario Real Estate Agent (Buyer's Realtor)
+* **Supervisory User:** Broker of Record (BOR) / Compliance Administrator
+
+### Business Rationale & Domain Context
+Under Ontario's Trust in Real Estate Services Act (TRESA), real estate brokerages representing buyers must establish client representation models and legal party identities upfront. In-house transactions where the same brokerage represents both parties require cryptographic workspace isolation to prevent confidentiality breaches (`T-004`).
 
 ---
 

@@ -24,9 +24,17 @@ tags:
 
 ---
 
-## 1. Description & User Story
+## 1. Technical Objective & User Context
 
-As a buyer's agent and brokerage conveyancer, I want the system to compile a validated, immutable **Transaction Record Sheet (TCS / Trade Record Sheet)** package containing all verified transaction metadata, chronologically ordered executed contracts, deposit evidence, and FINTRAC ID attestations, so that the firm deal can be handed off to brokerage accounting and conveyancing without manual paperwork reassembly.
+### Technical Objective (What Developers Build)
+Build the conveyancing pre-flight checklist validator, chronological PDF document bundle merger (using `pdf-lib`), immutable SHA-256 package snapshot generator, and the structured TCS export endpoint (`POST /tcs/export`) with accounting handoff event dispatching.
+
+### End-User Persona
+* **Primary User:** Licensed Real Estate Agent (submitting deal package)
+* **Recipient User:** Brokerage Conveyancer / Back-Office Accounting Administrator
+
+### Business Rationale & Domain Context
+Once a transaction goes firm, brokerage conveyance staff require a complete, tamper-evident Transaction Record Sheet (Trade Record Sheet) containing all signed contracts, fulfillment notices, deposit proofs, and FINTRAC identification. Under PRD Decision `Q22`, this must be a validated, read-only snapshot ready for handoff without performing commission disbursement calculations (`T-019`).
 
 ---
 

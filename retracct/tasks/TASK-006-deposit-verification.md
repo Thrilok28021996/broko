@@ -23,9 +23,17 @@ tags:
 
 ---
 
-## 1. Description & User Story
+## 1. Technical Objective & User Context
 
-As an agent and brokerage compliance reviewer, I want to track buyer deposit due dates, record deposit receipt events, verify holding party obligations, and attach documentary proof (wire transfer confirmation, certified cheque image, or bank receipt) without running a full general trust ledger, ensuring adherence to Ontario residential transaction norms and TRESA trust accounting notification rules.
+### Technical Objective (What Developers Build)
+Build the deposit timeline tracking service, statutory 24-hour countdown calculation, receipt evidence upload endpoint (`POST /deposits/{id}/receipt`), overdue escalation queue, and parallel fund state machine that decouples deposit receipt from contract firming.
+
+### End-User Persona
+* **Primary User:** Licensed Real Estate Agent (Buyer Representative)
+* **Escalation User:** Broker of Record (BOR) / Trust Compliance Officer
+
+### Business Rationale & Domain Context
+Ontario REBBA/TRESA s.27 mandates deposit placement in a statutory real estate trust account within 5 business days, but standard OREA Form 100 contracts specify payment "upon acceptance" (within 24 hours). Under PRD Decision `Q20`, BROKO tracks deposit events and proof of funds without implementing general trust accounting ledger reconciliation (`T-011`).
 
 ---
 

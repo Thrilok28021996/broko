@@ -23,9 +23,17 @@ tags:
 
 ---
 
-## 1. Description & User Story
+## 1. Technical Objective & User Context
 
-As a brokerage compliance manager and agent, I want the system to enforce delivery of the mandatory **RECO Information Guide** and require execution of the **Buyer Representation Agreement (OREA Form 300)** or **Self-Represented Party Confirmation (OREA Form 320)** before allowing offer submission, ensuring strict compliance with the **Trust in Real Estate Services Act (TRESA)**.
+### Technical Objective (What Developers Build)
+Build the RECO Guide delivery tracking service (`POST /compliance/reco-guide/deliver`), Form 300 / 320 representation agreement data models, and a non-bypassable compliance middleware that permits safe draft authoring but hard-blocks final offer presentation (`POST /offers/{id}/present`) until representation execution is verified.
+
+### End-User Persona
+* **Primary User:** Licensed Real Estate Agent (Buyer Representative)
+* **Supervisory User:** Brokerage Compliance Officer / Broker of Record (BOR)
+
+### Business Rationale & Domain Context
+TRESA mandates that before an agent can provide regulated services or submit offers on behalf of a buyer, the buyer must receive and acknowledge the statutory RECO Information Guide and execute a Buyer Representation Agreement (OREA Form 300) or Self-Represented Party Confirmation (OREA Form 320). PRD Decision `Q16` allows agents to draft contracts in advance, but legally consequential presentation must be gated.
 
 ---
 

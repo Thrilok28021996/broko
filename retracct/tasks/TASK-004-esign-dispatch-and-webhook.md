@@ -23,9 +23,17 @@ tags:
 
 ---
 
-## 1. Description & User Story
+## 1. Technical Objective & User Context
 
-As an agent or client signer, I want to dispatch drafted offer packages (Form 100 + Schedule A) for electronic signatures and automatically receive tamper-evident completion certificates and signed PDF documents via idempotent webhooks, ensuring strict auditability under Ontario's Electronic Commerce Act.
+### Technical Objective (What Developers Build)
+Build the electronic signature integration adapter (`POST /integrations/esign/dispatch`) to send Form 100 packages to signers, and construct an HMAC-authenticated, idempotent webhook receiver (`POST /integrations/esign/webhook`) with Redis deduplication to ingest completion certificates and signed PDFs.
+
+### End-User Persona
+* **Initiator:** Licensed Real Estate Agent (Realtor)
+* **Signers:** Buyer Client(s) (Signer 1, Co-Signer 2)
+
+### Business Rationale & Domain Context
+Ontario’s Electronic Commerce Act permits binding digital contract execution provided that independent audit trails (IP addresses, timestamps, signing certificates) are securely retained. E-sign callbacks are vulnerable to network retries, requiring duplicate-safe idempotent handlers (`T-020`) and external upload fallbacks (`T-010`).
 
 ---
 

@@ -24,11 +24,17 @@ tags:
 
 ---
 
-## 1. Description & User Story
+## 1. Technical Objective & User Context
 
-As an agent drafting an offer or reviewing an incoming counteroffer, I want an intelligent conversational bot assistant that:
-1. Prompts me for key variables (business days, interest rate caps, loan amounts, inspection scope) and populates standard OREA clause booklet templates or synthesizes custom clauses with a mandatory human approval review before inserting into Schedule A.
-2. Automatically parses incoming counteroffer documents and generates an executive difference summary (e.g. price change, irrevocability change, condition changes) so I can immediately advise my client.
+### Technical Objective (What Developers Build)
+Build the Clause Registry service seeded with the 10 standard OREA conditions, conversational NLP variable extraction endpoint (`POST /clauses/prompt-session`), Personal vs Office clause scoping, AI counteroffer difference summarizer (`GET /offers/{id}/diff`), and an approval staging modal requiring explicit human confirmation before Schedule A insertion.
+
+### End-User Persona
+* **Primary User:** Licensed Real Estate Agent (Realtor) drafting offers or reviewing counteroffers
+* **Supervisory User:** Broker of Record (curating the brokerage Office Clause library)
+
+### Business Rationale & Domain Context
+Ontario real estate transactions rely on ~10 time-tested standard OREA clauses that require specific parameterization (e.g. 5 business days, 4.2% rate cap, $600k principal). Under PRD Decisions `Q13` and `Q14`, AI cannot autonomously alter executed legal contracts; all AI-suggested clauses and counteroffer diffs must be staged for human review, and client PII must be sanitized from prompts (`TM-020`, `T-007`).
 
 ---
 
