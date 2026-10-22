@@ -20,7 +20,7 @@ tags:
 # TASK-003: Form 100 Offer Drafting & Schedule A Conditions
 
 > **Status:** `todo` | **Priority:** `P0` | **Sprint:** `sprint-1-poc`  
-> **Traceability:** Requirements `TM-003`, `TM-005`, `TM-010`, `TM-012`, `TM-013` | Decisions `Q08`, `Q11`, `Q12`, `Q13`, `Q14`, `Q18`, `Q19` | QA Cases `T-003`, `T-007`, `T-008` | Meetings [[retracct/meetings/2026-10-15-ai-bots-module|2026-10-15 AI Bots Module]]
+> **Traceability:** Requirements `TM-003`, `TM-005`, `TM-010`, `TM-012`, `TM-013` | Decisions `Q08`, `Q09`, `Q11`, `Q12`, `Q13`, `Q14`, `Q18`, `Q19` | QA Cases `T-003`, `T-005`, `T-007`, `T-008` | Meetings [[retracct/meetings/2026-10-15-ai-bots-module|2026-10-15 AI Bots Module]], [[retracct/meetings/2026-10-12-counter-offers-email-ingestion|2026-10-12 Counter-Offers Discovery]]
 
 ---
 

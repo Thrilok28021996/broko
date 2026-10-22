@@ -19,13 +19,13 @@ tags:
 # TASK-005: External Signed PDF Upload & Reconstruction
 
 > **Status:** `todo` | **Priority:** `P0` | **Sprint:** `sprint-1-poc`  
-> **Traceability:** Requirements `TM-004`, `TM-007` | Decisions `Q05`, `Q07` | QA Cases `T-001`
+> **Traceability:** Requirements `TM-004`, `TM-007` | Decisions `Q05`, `Q07`, `Q27` | QA Cases `T-001` | Meetings [[retracct/meetings/2026-10-12-counter-offers-email-ingestion|2026-10-12 Counter-Offers Discovery]]
 
 ---
 
 ## 1. Description & User Story
 
-As an agent who received an executed agreement signed outside the platform (e.g. from the listing agent via external software or paper scan), I want to upload the signed PDF into BROKO and have the system parse/extract key terms (price, parties, conditions, closing date) into an editable verification screen, so that outside deals can be reconstructed and tracked with full audit fidelity without retyping everything from scratch.
+As an agent who received an executed agreement or counteroffer signed outside the platform (e.g. from the listing agent via external email or paper scan), I want to upload the signed PDF or forward it via email to a dedicated incoming address (`offers@broko.ai`), so that BROKO automatically parses and extracts key terms (price, parties, conditions, closing date) into an editable verification screen without forcing manual recreation.
 
 ---
 
@@ -34,7 +34,13 @@ As an agent who received an executed agreement signed outside the platform (e.g.
 ```typescript
 export interface DocumentImportPayload {
   transactionId: string;
-  sourceType: "EXTERNAL_EXECUTED_PDF" | "MANUAL_SCAN";
+  sourceType: "EXTERNAL_EXECUTED_PDF" | "MANUAL_SCAN" | "INBOUND_EMAIL_FORWARD";
+  inboundEmailMetadata?: {
+    forwardedByAgentEmail: string;
+    originalSenderEmail: string;
+    subjectLine: string;
+    receivedAt: string; // ISO 8601
+  };
   fileMetadata: {
     fileName: string;
     fileSizeBytes: number;

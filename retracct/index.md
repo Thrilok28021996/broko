@@ -3,6 +3,7 @@ title: "BROKO — Offer & Transaction Management"
 version: "3.0"
 date: "2026-10-20"
 module: "Transaction & Offer Management"
+parent: "[[index|BROKO Master Index]]"
 status: "Baseline"
 jurisdiction: "Ontario (Residential)"
 tags:

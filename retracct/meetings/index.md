@@ -28,6 +28,7 @@ This directory is the ingestion landing zone for team meetings, legal reviews, s
 | --- | --- | --- | --- | --- |
 | 2026-10-20 | [[retracct/meetings/2026-10-20-baseline-review\|Baseline v3.0 Architecture Review]] | PRD, Buyer Freehold POC Scope, Open Decisions | Canonical | [[retracct/01-prd/master-prd]], [[retracct/05-matrices/open-decisions]] |
 | 2026-10-15 | [[retracct/meetings/2026-10-15-ai-bots-module\|AI Bots Module & Clause Library Discovery]] | Clause Booklet, Parameterization Bot, Personal vs Office Library | Ingested | [[retracct/tasks/TASK-003-form-100-drafting]], [[retracct/tasks/TASK-009-ai-clause-assistant]], [[retracct/05-matrices/requirements-matrix]] |
+| 2026-10-12 | [[retracct/meetings/2026-10-12-counter-offers-email-ingestion\|Counter-Offers, Email Ingestion & Acceptance]] | SkySlope Inbound Email Forwarding, Strike-Outs, COA, AI Diff | Ingested | [[retracct/tasks/TASK-003-form-100-drafting]], [[retracct/tasks/TASK-005-signed-pdf-import]], [[retracct/tasks/TASK-009-ai-clause-assistant]] |
 
 ---
 

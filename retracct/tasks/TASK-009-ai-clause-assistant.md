@@ -20,13 +20,15 @@ tags:
 # TASK-009: AI Clause Assistant & Intelligent Parameterization Engine
 
 > **Status:** `todo` | **Priority:** `P1` | **Sprint:** `sprint-1-poc`  
-> **Traceability:** Requirements `TM-012`, `TM-020` | Decisions `Q13`, `Q14`, `Q26` | QA Cases `T-007`, `T-017` | Meetings [[retracct/meetings/2026-10-15-ai-bots-module|2026-10-15 AI Bots Module]]
+> **Traceability:** Requirements `TM-011`, `TM-012`, `TM-020` | Decisions `Q09`, `Q13`, `Q14`, `Q26` | QA Cases `T-005`, `T-007`, `T-017` | Meetings [[retracct/meetings/2026-10-15-ai-bots-module|2026-10-15 AI Bots Module]], [[retracct/meetings/2026-10-12-counter-offers-email-ingestion|2026-10-12 Counter-Offers Discovery]]
 
 ---
 
 ## 1. Description & User Story
 
-As an agent drafting an Agreement of Purchase and Sale, I want an intelligent conversational bot assistant that prompts me for key variables (business days, interest rate caps, loan amounts, inspection scope) and automatically selects and populates the standard OREA clause booklet templates or synthesizes custom clauses from natural language intent, with a mandatory human approval review before inserting any clause into Schedule A.
+As an agent drafting an offer or reviewing an incoming counteroffer, I want an intelligent conversational bot assistant that:
+1. Prompts me for key variables (business days, interest rate caps, loan amounts, inspection scope) and populates standard OREA clause booklet templates or synthesizes custom clauses with a mandatory human approval review before inserting into Schedule A.
+2. Automatically parses incoming counteroffer documents and generates an executive difference summary (e.g. price change, irrevocability change, condition changes) so I can immediately advise my client.
 
 ---
 
@@ -86,6 +88,13 @@ export interface ClausePromptSession {
 - [ ] **Mandatory Human-in-the-Loop Review (`Q14`, `T-007`):**
   - AI proposals are displayed in an **Approval Staging Modal**.
   - The system **NEVER** silently inserts an AI-generated or custom clause into Schedule A without explicit agent confirmation.
+- [ ] **AI Counteroffer Difference Summarizer:**
+  - Compares previous offer version against incoming counteroffer PDF/version.
+  - Generates clear bulleted difference list:
+    - *Purchase Price:* e.g. `$1,150,000` $\rightarrow$ `$1,245,000` (+ $95,000).
+    - *Irrevocable Expiry:* e.g. `2026-10-19 23:59` $\rightarrow$ `2026-10-21 23:59` (+ 2 days).
+    - *Schedule A Conditions:* Identifies any added, struck-out, or modified clauses.
+  - Presents 3 immediate action triggers: `[Accept Counter]`, `[Counter Round N+1]`, `[Reject / Terminate]`.
 - [ ] **Data Privacy & No Unapproved Model Egress (`Q26`, `TM-020`, `T-017`):**
   - Ensures private client identity documents (e.g. driver's licenses, SIN numbers, bank account numbers) are never piped to external AI models.
   - Clause intent prompts only pass sanitized parameters (dates, amounts, property address).
